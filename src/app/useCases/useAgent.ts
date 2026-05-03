@@ -129,6 +129,10 @@ export const useAgent = () => {
     setSelectedKeyIndex,
     label,
     setLabel,
+    keyLabels,
+    setKeyLabels,
+    sectionLabels,
+    setSectionLabels,
   } = useContext(AppContext);
 
   const importAgent = (passphrase: string, labelValue: string) => {
@@ -153,6 +157,20 @@ export const useAgent = () => {
     setSelectedKeyIndex,
     publicKeys,
     label,
+    keyLabels,
+    sectionLabels,
+    setKeyLabel: (publicKey: string, friendlyLabel: string) => {
+      setKeyLabels({
+        ...keyLabels,
+        [publicKey]: friendlyLabel,
+      });
+    },
+    setSectionLabel: (sectionIndex: number, friendlyLabel: string) => {
+      setSectionLabels({
+        ...sectionLabels,
+        [sectionIndex]: friendlyLabel,
+      });
+    },
     importAgent,
     deleteAgent,
   };
