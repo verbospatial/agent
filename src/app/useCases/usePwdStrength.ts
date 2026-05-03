@@ -1,6 +1,14 @@
 import { useState, useEffect, useDeferredValue } from 'react';
-import { ZxcvbnResult, zxcvbnAsync } from '@zxcvbn-ts/core';
+import { ZxcvbnResult } from '@zxcvbn-ts/core';
 import { useInputValidationProps } from './useInputValidation';
+
+declare global {
+  interface Window {
+    zxcvbnts: any;
+  }
+}
+
+window.zxcvbnts = window.zxcvbnts || {};
 
 export const usePasswordValidationProps = (
   validate: (pwd: string, strength: ZxcvbnResult | null | undefined) => boolean,
@@ -14,6 +22,13 @@ export const usePasswordValidationProps = (
   const deferredPassword = useDeferredValue(value);
 
   useEffect(() => {
+    const zxcvbnAsync = window.zxcvbnts?.core?.zxcvbnAsync;
+
+    if (typeof zxcvbnAsync !== 'function') {
+      setResult(null);
+      return;
+    }
+
     zxcvbnAsync(deferredPassword)
       .then((response: any) => setResult(response))
       .catch(() => setResult(null));

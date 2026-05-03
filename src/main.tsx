@@ -7,15 +7,6 @@ if (!globalThis.Buffer) {
   globalThis.Buffer = Buffer;
 }
 
-
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker
-      .register(`${import.meta.env.BASE_URL}sw.js`)
-      .catch(() => undefined);
-  });
-}
-
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
