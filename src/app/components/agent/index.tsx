@@ -84,8 +84,6 @@ const KeyDetails = ({
   const selectedKey = publicKeys[selectedKeyIndex[0]][selectedKeyIndex[1]];
   const { keyLabels, setKeyLabel, sectionLabels, setSectionLabel } = useAgent();
   const [onlyLabeled, setOnlyLabeled] = useState(false);
-  const [visibleSections, setVisibleSections] = useState(7);
-  const [visibleKeysBySection, setVisibleKeysBySection] = useState<Record<number, number>>({});
 
   return (
     <IonContent scrollY={false}>
@@ -113,7 +111,6 @@ const KeyDetails = ({
                 keys: keys.filter((pubKey) => !onlyLabeled || !!keyLabels[pubKey]?.trim()),
               }))
               .filter((section) => section.keys.length > 0)
-              .slice(0, visibleSections)
               .map((section) => (
                 <IonAccordion key={section.sectionIndex} value={publicKeys[section.sectionIndex][0]}>
                   <IonItem slot="header" color="light">
@@ -129,9 +126,7 @@ const KeyDetails = ({
                     />
                   </IonItem>
                   <div className="ion-padding" slot="content">
-                    {section.keys
-                      .slice(0, visibleKeysBySection[section.sectionIndex] ?? 7)
-                      .map((pubKey) => (
+                    {section.keys.map((pubKey) => (
                       <IonItem key={pubKey}>
                         <IonInput
                           value={keyLabels[pubKey] ?? ''}
@@ -161,36 +156,10 @@ const KeyDetails = ({
                           ></IonIcon>
                         )}
                       </IonItem>
-                      ))}
-                    {(visibleKeysBySection[section.sectionIndex] ?? 7) < section.keys.length && (
-                      <IonButton
-                        expand="block"
-                        fill="clear"
-                        onClick={() =>
-                          setVisibleKeysBySection((prev) => ({
-                            ...prev,
-                            [section.sectionIndex]:
-                              (prev[section.sectionIndex] ?? 7) + 7,
-                          }))
-                        }
-                      >
-                        Load more keys
-                      </IonButton>
-                    )}
+                    ))}
                   </div>
                 </IonAccordion>
               ))}
-            {visibleSections < publicKeys.length && (
-              <IonItem lines="none">
-                <IonButton
-                  expand="block"
-                  fill="clear"
-                  onClick={() => setVisibleSections((count) => count + 7)}
-                >
-                  Load more sections
-                </IonButton>
-              </IonItem>
-            )}
           </IonAccordionGroup>
         </section>
       </IonList>
