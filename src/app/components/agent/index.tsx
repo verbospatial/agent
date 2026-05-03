@@ -20,9 +20,7 @@ import {
   arrowForwardOutline,
 } from 'ionicons/icons';
 import { shortenB64 } from '../../utils/compat';
-import { KeyAbbrev } from '../keyChip';
 import { useAgent } from '../../useCases/useAgent';
-import { usePublicKeyBalance } from '../../useCases/usePublicKeyBalance';
 
 const Agent = ({
   hideLabel,
@@ -74,7 +72,6 @@ const Agent = ({
 export default Agent;
 
 const KeyDetails = ({
-  onDismiss,
   publicKeys,
   selectedKeyIndex,
   setSelectedKeyIndex,
@@ -85,22 +82,11 @@ const KeyDetails = ({
   setSelectedKeyIndex: (key: [number, number]) => void;
 }) => {
   const selectedKey = publicKeys[selectedKeyIndex[0]][selectedKeyIndex[1]];
-  const { keyLabels, setKeyLabel } = useAgent();
-  const balance = usePublicKeyBalance(selectedKey);
+  const { keyLabels, setKeyLabel, sectionLabels, setSectionLabel } = useAgent();
   const [onlyLabeled, setOnlyLabeled] = useState(false);
 
   return (
     <IonContent scrollY={false}>
-      <div
-        style={{
-          marginTop: '20px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
-      >
-      </div>
-
       <IonList>
         <IonListHeader>
           <IonLabel>
@@ -111,19 +97,6 @@ const KeyDetails = ({
         </IonListHeader>
         <section className="ion-content-scroll-host">
           <IonItem lines="none">
-            <IonLabel position="stacked">Friendly label</IonLabel>
-            <IonInput
-              value={keyLabels[selectedKey] ?? ''}
-              placeholder={shortenB64(selectedKey)}
-              onIonInput={(event) =>
-                setKeyLabel(selectedKey, event.target.value?.toString() ?? '')
-              }
-            />
-            <IonLabel className="ion-margin-top">
-              Balance: {(balance / 100000000).toFixed(8)} CRUZ
-            </IonLabel>
-          </IonItem>
-          <IonItem lines="none">
             <IonToggle
               checked={onlyLabeled}
               onIonChange={(event) => setOnlyLabeled(event.detail.checked)}
@@ -132,35 +105,51 @@ const KeyDetails = ({
             </IonToggle>
           </IonItem>
           <IonAccordionGroup>
-            {publicKeys.map((keys, i) => (
-              <IonAccordion key={i} value={publicKeys[i][0]}>
-                <IonItem slot="header" color="light">
-                  <IonLabel>
-                    {i}
+            {publicKeys
+              .map((keys, i) => ({
+                sectionIndex: i,
+                keys: keys.filter((pubKey) => !onlyLabeled || !!keyLabels[pubKey]?.trim()),
+              }))
+              .filter((section) => section.keys.length > 0)
+              .map((section) => (
+                <IonAccordion key={section.sectionIndex} value={publicKeys[section.sectionIndex][0]}>
+                  <IonItem slot="header" color="light">
+                    <IonInput
+                      value={sectionLabels[section.sectionIndex] ?? `${section.sectionIndex}`}
+                      onIonInput={(event) =>
+                        setSectionLabel(
+                          section.sectionIndex,
+                          event.target.value?.toString() ?? `${section.sectionIndex}`,
+                        )
+                      }
+                    />
                     <IonIcon
                       className="ion-margin-start ion-margin-end"
                       icon={arrowForwardOutline}
                     />
-                    <KeyAbbrev value={publicKeys[i][0]} />
-                  </IonLabel>
-                </IonItem>
-                <div className="ion-padding" slot="content">
-                  {keys
-                    .filter((pubKey) => !onlyLabeled || !!keyLabels[pubKey]?.trim())
-                    .map((pubKey, j) => (
-                    <IonItem
-                      key={pubKey}
-                      button
-                      detail={selectedKey !== pubKey}
-                      onClick={() => {
-                          const keyIndex = keys.findIndex((value) => value === pubKey);
-                          setSelectedKeyIndex([i, keyIndex]);
+                    <code>{shortenB64(publicKeys[section.sectionIndex][0])}</code>
+                  </IonItem>
+                  <div className="ion-padding" slot="content">
+                    {section.keys.map((pubKey) => (
+                      <IonItem
+                        key={pubKey}
+                        button
+                        detail={selectedKey !== pubKey}
+                        onClick={() => {
+                          const keyIndex = publicKeys[section.sectionIndex].findIndex(
+                            (value) => value === pubKey,
+                          );
+                          setSelectedKeyIndex([section.sectionIndex, keyIndex]);
                         }}
-                      aria-selected={selectedKey === pubKey}
-                      disabled={selectedKey === pubKey}
-                    >
-                      <IonLabel>
-                        <code>{keyLabels[pubKey] || shortenB64(pubKey)}</code>
+                        aria-selected={selectedKey === pubKey}
+                        disabled={selectedKey === pubKey}
+                      >
+                        <IonInput
+                          value={keyLabels[pubKey] || shortenB64(pubKey)}
+                          onIonInput={(event) =>
+                            setKeyLabel(pubKey, event.target.value?.toString() ?? '')
+                          }
+                        />
                         {pubKey === selectedKey && (
                           <IonIcon
                             className="ion-margin-start"
@@ -168,12 +157,11 @@ const KeyDetails = ({
                             color="success"
                           ></IonIcon>
                         )}
-                      </IonLabel>
-                    </IonItem>
+                      </IonItem>
                     ))}
-                </div>
-              </IonAccordion>
-            ))}
+                  </div>
+                </IonAccordion>
+              ))}
           </IonAccordionGroup>
         </section>
       </IonList>

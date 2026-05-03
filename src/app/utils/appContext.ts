@@ -14,6 +14,8 @@ interface AppState {
   setLabel: (label: string) => void;
   keyLabels: Record<string, string>;
   setKeyLabels: (labels: Record<string, string>) => void;
+  sectionLabels: Record<number, string>;
+  setSectionLabels: (labels: Record<number, string>) => void;
   requestTipHeader: () => void;
   tipHeader?: BlockIdHeaderPair;
   setTipHeader: (tipHeader: BlockIdHeaderPair) => void;
@@ -68,6 +70,8 @@ export const AppContext = createContext<AppState>({
   setLabel: (label: string) => {},
   keyLabels: {},
   setKeyLabels: () => {},
+  sectionLabels: {},
+  setSectionLabels: () => {},
   tipHeader: undefined,
   requestTipHeader: () => {},
   setTipHeader: () => {},

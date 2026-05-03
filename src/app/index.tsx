@@ -62,6 +62,10 @@ const App: React.FC = () => {
     'key-labels',
     {},
   );
+  const [sectionLabels, setSectionLabels] = usePersistentState<Record<number, string>>(
+    'section-labels',
+    {},
+  );
 
   const [tipHeader, setTipHeader] = useState<BlockIdHeaderPair>();
   const [currentBlock, setCurrentBlock] =
@@ -407,6 +411,8 @@ const App: React.FC = () => {
     setLabel,
     keyLabels,
     setKeyLabels,
+    sectionLabels,
+    setSectionLabels,
     requestTipHeader,
     tipHeader,
     setTipHeader,
