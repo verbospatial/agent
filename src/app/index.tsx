@@ -207,16 +207,18 @@ const App: React.FC = () => {
   const pushTransaction = async (
     to: string,
     memo: string,
+    amountCruzbits: number,
     passphrase: string,
     labelValue: string,
     selectedKeyIndex: [number, number],
     resultHandler: (data: { transaction_id: string; error: string }) => void,
   ) => {
     if (readyState !== ReadyState.OPEN) return;
-    if (to && memo && tipHeader?.header.height && publicKeys.length) {
+    if (to && memo && amountCruzbits > 0 && tipHeader?.header.height && publicKeys.length) {
       const transaction = await signTransaction(
         to,
         memo,
+        amountCruzbits,
         tipHeader?.header.height,
         selectedKeyIndex,
         passphrase,

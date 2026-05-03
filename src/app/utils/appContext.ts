@@ -37,6 +37,7 @@ interface AppState {
   pushTransaction: (
     to: string,
     memo: string,
+    amountCruzbits: number,
     passphrase: string,
     label: string,
     selectedKeyIndex: [number, number],
@@ -91,6 +92,7 @@ export const AppContext = createContext<AppState>({
   pushTransaction: (
     to: string,
     memo: string,
+    amountCruzbits: number,
     passphrase: string,
     label: string,
     selectedKeyIndex: [number, number],
