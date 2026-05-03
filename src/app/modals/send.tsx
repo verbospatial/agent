@@ -31,6 +31,7 @@ import { SetupAgent } from '../components/agentSetup';
 import { TransactionList } from '../components/transaction';
 import { usePendingTransactions } from '../useCases/usePendingTxs';
 import { usePubKeyTransactions } from '../useCases/usePubKeyTxs';
+import { usePublicKeyBalance } from '../useCases/usePublicKeyBalance';
 import { MinAmountCruzbits } from '../utils/constants';
 
 const Send = () => {
@@ -126,6 +127,7 @@ const Send = () => {
 
   const pendingTransactions = usePendingTransactions(selectedKey);
   const recentTransactions = usePubKeyTransactions(selectedKey).slice(0, 3);
+  const selectedKeyBalance = usePublicKeyBalance(selectedKey);
 
   return (
     <PageShell
@@ -258,6 +260,16 @@ const Send = () => {
                 Send
               </IonButton>
               <IonItemDivider />
+              <IonItem lines="none">
+                <IonCard style={{ width: '100%' }}>
+                  <IonCardHeader>
+                    <IonCardSubtitle>Balance</IonCardSubtitle>
+                  </IonCardHeader>
+                  <IonCardContent>
+                    {(selectedKeyBalance / 100000000).toFixed(8)} CRUZ
+                  </IonCardContent>
+                </IonCard>
+              </IonItem>
               {!!pendingTransactions && !!pendingTransactions.length && (
                 <TransactionList
                   heading="Pending"

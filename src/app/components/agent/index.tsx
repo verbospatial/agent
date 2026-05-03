@@ -9,8 +9,10 @@ import {
   IonList,
   IonListHeader,
   IonInput,
+  IonToggle,
   useIonModal,
 } from '@ionic/react';
+import { useState } from 'react';
 import {
   chevronExpandOutline,
   keyOutline,
@@ -85,6 +87,7 @@ const KeyDetails = ({
   const selectedKey = publicKeys[selectedKeyIndex[0]][selectedKeyIndex[1]];
   const { keyLabels, setKeyLabel } = useAgent();
   const balance = usePublicKeyBalance(selectedKey);
+  const [onlyLabeled, setOnlyLabeled] = useState(false);
 
   return (
     <IonContent scrollY={false}>
@@ -120,6 +123,14 @@ const KeyDetails = ({
               Balance: {(balance / 100000000).toFixed(8)} CRUZ
             </IonLabel>
           </IonItem>
+          <IonItem lines="none">
+            <IonToggle
+              checked={onlyLabeled}
+              onIonChange={(event) => setOnlyLabeled(event.detail.checked)}
+            >
+              Show labeled keys only
+            </IonToggle>
+          </IonItem>
           <IonAccordionGroup>
             {publicKeys.map((keys, i) => (
               <IonAccordion key={i} value={publicKeys[i][0]}>
@@ -134,14 +145,17 @@ const KeyDetails = ({
                   </IonLabel>
                 </IonItem>
                 <div className="ion-padding" slot="content">
-                  {keys.map((pubKey, j) => (
+                  {keys
+                    .filter((pubKey) => !onlyLabeled || !!keyLabels[pubKey]?.trim())
+                    .map((pubKey, j) => (
                     <IonItem
                       key={pubKey}
                       button
                       detail={selectedKey !== pubKey}
                       onClick={() => {
-                        setSelectedKeyIndex([i, j]);
-                      }}
+                          const keyIndex = keys.findIndex((value) => value === pubKey);
+                          setSelectedKeyIndex([i, keyIndex]);
+                        }}
                       aria-selected={selectedKey === pubKey}
                       disabled={selectedKey === pubKey}
                     >
@@ -156,7 +170,7 @@ const KeyDetails = ({
                         )}
                       </IonLabel>
                     </IonItem>
-                  ))}
+                    ))}
                 </div>
               </IonAccordion>
             ))}
