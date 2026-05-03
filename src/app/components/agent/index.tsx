@@ -18,7 +18,6 @@ import {
   chevronExpandOutline,
   keyOutline,
   checkmarkCircleOutline,
-  arrowForwardOutline,
 } from 'ionicons/icons';
 import { shortenB64 } from '../../utils/compat';
 import { useAgent } from '../../useCases/useAgent';
@@ -124,10 +123,6 @@ const KeyDetails = ({
                           event.detail.value?.toString() ?? '',
                         )
                       }
-                    />
-                    <IonIcon
-                      className="ion-margin-start ion-margin-end"
-                      icon={arrowForwardOutline}
                     />
                   </IonItem>
                   <div className="ion-padding" slot="content">

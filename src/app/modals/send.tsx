@@ -10,6 +10,7 @@ import {
   IonItem,
   IonItemDivider,
   IonList,
+  IonText,
   IonTextarea,
   useIonActionSheet,
   useIonModal,
@@ -197,14 +198,12 @@ const Send = () => {
                     )}
                   </span>
                 </div>
-                <IonCard style={{ width: '100%' }}>
-                  <IonCardHeader>
-                    <IonCardSubtitle>Balance</IonCardSubtitle>
-                  </IonCardHeader>
-                  <IonCardContent>
-                    {(selectedKeyBalance / 100000000).toFixed(8)} CRUZ
-                  </IonCardContent>
-                </IonCard>
+                <IonText
+                  color="medium"
+                  style={{ textAlign: 'center', width: '100%', display: 'block' }}
+                >
+                  Balance: {(selectedKeyBalance / 100000000).toFixed(8)} CRUZ
+                </IonText>
               </section>
               <IonList>
                 <IonItem lines="none">
