@@ -10,6 +10,7 @@ import {
   IonListHeader,
   IonInput,
   IonToggle,
+  IonButton,
   useIonModal,
 } from '@ionic/react';
 import { useState } from 'react';
@@ -116,10 +117,11 @@ const KeyDetails = ({
                   <IonItem slot="header" color="light">
                     <IonInput
                       value={sectionLabels[section.sectionIndex] ?? `${section.sectionIndex}`}
+                      placeholder={`${section.sectionIndex}`}
                       onIonInput={(event) =>
                         setSectionLabel(
                           section.sectionIndex,
-                          event.target.value?.toString() ?? `${section.sectionIndex}`,
+                          event.detail.value?.toString() ?? '',
                         )
                       }
                     />
@@ -131,25 +133,27 @@ const KeyDetails = ({
                   </IonItem>
                   <div className="ion-padding" slot="content">
                     {section.keys.map((pubKey) => (
-                      <IonItem
-                        key={pubKey}
-                        button
-                        detail={selectedKey !== pubKey}
-                        onClick={() => {
-                          const keyIndex = publicKeys[section.sectionIndex].findIndex(
-                            (value) => value === pubKey,
-                          );
-                          setSelectedKeyIndex([section.sectionIndex, keyIndex]);
-                        }}
-                        aria-selected={selectedKey === pubKey}
-                        disabled={selectedKey === pubKey}
-                      >
+                      <IonItem key={pubKey}>
                         <IonInput
-                          value={keyLabels[pubKey] || shortenB64(pubKey)}
+                          value={keyLabels[pubKey] ?? ''}
+                          placeholder={shortenB64(pubKey)}
                           onIonInput={(event) =>
-                            setKeyLabel(pubKey, event.target.value?.toString() ?? '')
+                            setKeyLabel(pubKey, event.detail.value?.toString() ?? '')
                           }
                         />
+                        <IonButton
+                          fill={selectedKey === pubKey ? 'solid' : 'outline'}
+                          size="small"
+                          disabled={selectedKey === pubKey}
+                          onClick={() => {
+                            const keyIndex = publicKeys[section.sectionIndex].findIndex(
+                              (value) => value === pubKey,
+                            );
+                            setSelectedKeyIndex([section.sectionIndex, keyIndex]);
+                          }}
+                        >
+                          Use
+                        </IonButton>
                         {pubKey === selectedKey && (
                           <IonIcon
                             className="ion-margin-start"
