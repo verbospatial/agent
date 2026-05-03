@@ -31,6 +31,7 @@ import { SetupAgent } from '../components/agentSetup';
 import { TransactionList } from '../components/transaction';
 import { usePendingTransactions } from '../useCases/usePendingTxs';
 import { usePubKeyTransactions } from '../useCases/usePubKeyTxs';
+import { MinAmountCruzbits } from '../utils/constants';
 
 const Send = () => {
   const { pushTransaction } = useContext(AppContext);
@@ -58,30 +59,46 @@ const Send = () => {
 
   const [presentToast] = useIonToast();
 
-  const execute = (passphrase: string, selectedKeyIndex: [number, number]) => {
+  const execute = (
+    passphrase: string,
+    selectedKeyIndex: [number, number],
+    amountCruzbits: number,
+  ) => {
     if (!isAddressValid || !isMemoValid) {
       return;
     }
-    pushTransaction(address, memo, passphrase, label, selectedKeyIndex, (data: any) => {
-      presentToast({
-        message:
-          data.error ||
-          `Transaction: ${shortenHex(data.transaction_id)} was executed`,
-        duration: 5000,
-        position: 'bottom',
-      });
+    pushTransaction(
+      address,
+      memo,
+      amountCruzbits,
+      passphrase,
+      label,
+      selectedKeyIndex,
+      (data: any) => {
+        presentToast({
+          message:
+            data.error ||
+            `Transaction: ${shortenHex(data.transaction_id)} was executed`,
+          duration: 5000,
+          position: 'bottom',
+        });
 
-      if (!data.error) {
-        setAddress('');
-        setMemo('');
-      }
-    });
+        if (!data.error) {
+          setAddress('');
+          setMemo('');
+        }
+      },
+    );
   };
 
   const [presentModal, dismiss] = useIonModal(AuthorizeTransaction, {
     onDismiss: () => dismiss(),
-    onAuthorize: (passphrase: string, selectedKeyIndex: [number, number]) => {
-      execute(passphrase, selectedKeyIndex);
+    onAuthorize: (
+      passphrase: string,
+      selectedKeyIndex: [number, number],
+      amountCruzbits: number,
+    ) => {
+      execute(passphrase, selectedKeyIndex, amountCruzbits);
       dismiss();
     },
     address,
@@ -270,7 +287,11 @@ const AuthorizeTransaction = ({
   memo,
 }: {
   onDismiss: () => void;
-  onAuthorize: (passphrase: string, selectedKeyIndex: [number, number]) => void;
+  onAuthorize: (
+    passphrase: string,
+    selectedKeyIndex: [number, number],
+    amountCruzbits: number,
+  ) => void;
   address: string;
   memo: string;
 }) => {
@@ -283,6 +304,13 @@ const AuthorizeTransaction = ({
   } = useInputValidationProps((input: string) => input.length > 0);
 
   const { publicKeys, selectedKeyIndex, setSelectedKeyIndex } = useAgent();
+  const {
+    value: amount,
+    onBlur: onBlurAmount,
+    isValid: isAmountValid,
+    isTouched: isAmountTouched,
+    onInputChange: setAmount,
+  } = useInputValidationProps((input: string) => Number(input) > 0, '0.01');
 
   return (
     <div>
@@ -304,6 +332,20 @@ const AuthorizeTransaction = ({
             className="ion-margin-top"
             readonly
             value={memo}
+          />
+          <IonInput
+            className={`${isAmountValid && 'ion-valid'} ${
+              isAmountValid === false && 'ion-invalid'
+            } ${isAmountTouched && 'ion-touched'}`}
+            label="Amount (CRUZ)"
+            labelPlacement="stacked"
+            type="number"
+            min={0.01}
+            step="0.01"
+            errorText="Amount must be greater than 0"
+            value={amount}
+            onIonBlur={onBlurAmount}
+            onIonInput={(event) => setAmount(event.target.value?.toString() ?? '')}
           />
           <span
             style={{
@@ -338,8 +380,17 @@ const AuthorizeTransaction = ({
             fill="solid"
             expand="block"
             strong={true}
-            disabled={!isPassphraseValid}
-            onClick={() => onAuthorize(passphrase, selectedKeyIndex)}
+            disabled={!isPassphraseValid || !isAmountValid}
+            onClick={() =>
+              onAuthorize(
+                passphrase,
+                selectedKeyIndex,
+                Math.max(
+                  MinAmountCruzbits,
+                  Math.round(Number(amount || 0) * 100000000),
+                ),
+              )
+            }
           >
             Confirm
           </IonButton>

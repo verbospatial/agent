@@ -9,7 +9,7 @@ import { BLOCKS_UNTIL_NEW_SERIES } from '../utils/constants';
 import { Transaction } from '../utils/appTypes';
 import { useContext } from 'react';
 import { AppContext } from '../utils/appContext';
-import { MinFeeCruzbits, MinAmountCruzbits } from '../utils/constants';
+import { MinFeeCruzbits } from '../utils/constants';
 import { Buffer } from 'buffer';
 
 /**
@@ -86,6 +86,7 @@ const getPersonas = (
 export const signTransaction = async (
   to: string,
   memo: string,
+  amountCruzbits: number,
   tipHeight: number,
   agentIndex: [number, number],
   passPhrase: string,
@@ -102,7 +103,7 @@ export const signTransaction = async (
     nonce: Math.floor(Math.random() * (2 ** 31 - 1)),
     from: keyPair.publicKey,
     to: to,
-    amount: MinAmountCruzbits,
+    amount: amountCruzbits,
     fee: MinFeeCruzbits,
     memo,
     series: Math.floor(tipHeight / BLOCKS_UNTIL_NEW_SERIES) + 1,
