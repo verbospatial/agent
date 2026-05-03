@@ -83,11 +83,6 @@ const getPersonas = (
   return keypairs;
 };
 
-const DEFAULT_SECTION_COUNT = 7;
-const DEFAULT_KEYS_PER_SECTION = 7;
-const MAX_SECTION_COUNT = 20;
-const MAX_KEYS_PER_SECTION = 20;
-
 export const signTransaction = async (
   to: string,
   memo: string,
@@ -141,12 +136,7 @@ export const useAgent = () => {
   } = useContext(AppContext);
 
   const importAgent = (passphrase: string, labelValue: string) => {
-    const keys = getPersonas(
-      passphrase,
-      labelValue,
-      Math.max(DEFAULT_SECTION_COUNT, MAX_SECTION_COUNT),
-      Math.max(DEFAULT_KEYS_PER_SECTION, MAX_KEYS_PER_SECTION),
-    ).map((o) =>
+    const keys = getPersonas(passphrase, labelValue, 7).map((o) =>
       o.map((p) => p.publicKey),
     );
 
