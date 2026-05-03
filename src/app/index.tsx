@@ -58,6 +58,10 @@ const App: React.FC = () => {
     'agent-label',
     'candidspaces',
   );
+  const [keyLabels, setKeyLabels] = usePersistentState<Record<string, string>>(
+    'key-labels',
+    {},
+  );
 
   const [tipHeader, setTipHeader] = useState<BlockIdHeaderPair>();
   const [currentBlock, setCurrentBlock] =
@@ -163,6 +167,15 @@ const App: React.FC = () => {
               new CustomEvent<Transaction[]>('filter_transaction_queue', {
                 detail: body.transactions,
               }),
+            );
+            break;
+          case 'balance':
+            document.dispatchEvent(
+              new CustomEvent<{
+                public_key: string;
+                balance: number;
+                error?: string;
+              }>('balance', { detail: body }),
             );
             break;
         }
@@ -342,6 +355,32 @@ const App: React.FC = () => {
     [readyState, applyFilter, sendJsonMessage],
   );
 
+  const requestBalance = useCallback(
+    (
+      publicKeyB64: string,
+      resultHandler: (result: { public_key: string; balance: number; error?: string }) => void,
+    ) => {
+      if (readyState !== ReadyState.OPEN) return;
+      if (!publicKeyB64) return;
+
+      sendJsonMessage({
+        type: 'get_balance',
+        body: { public_key: publicKeyB64 },
+      });
+
+      return socketEventListener<{
+        public_key: string;
+        balance: number;
+        error?: string;
+      }>('balance', (data) => {
+        if (data.public_key === publicKeyB64) {
+          resultHandler(data);
+        }
+      });
+    },
+    [readyState, sendJsonMessage],
+  );
+
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
 
   const [colorScheme, setColorScheme] = useState<'light' | 'dark'>(
@@ -366,6 +405,8 @@ const App: React.FC = () => {
     setSelectedKeyIndex,
     label,
     setLabel,
+    keyLabels,
+    setKeyLabels,
     requestTipHeader,
     tipHeader,
     setTipHeader,
@@ -379,6 +420,7 @@ const App: React.FC = () => {
     requestTransaction,
     requestPkTransactions,
     requestPendingTransactions,
+    requestBalance,
     selectedNode,
     setSelectedNode,
     colorScheme,

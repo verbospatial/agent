@@ -8,6 +8,7 @@ import {
   IonLabel,
   IonList,
   IonListHeader,
+  IonInput,
   useIonModal,
 } from '@ionic/react';
 import {
@@ -18,6 +19,8 @@ import {
 } from 'ionicons/icons';
 import { shortenB64 } from '../../utils/compat';
 import { KeyAbbrev } from '../keyChip';
+import { useAgent } from '../../useCases/useAgent';
+import { usePublicKeyBalance } from '../../useCases/usePublicKeyBalance';
 
 const Agent = ({
   hideLabel,
@@ -30,6 +33,7 @@ const Agent = ({
   selectedKeyIndex: [number, number];
   setSelectedKeyIndex: (key: [number, number]) => void;
 }) => {
+  const { keyLabels } = useAgent();
   const [present, dismiss] = useIonModal(KeyDetails, {
     onDismiss: () => dismiss(),
     selectedKeyIndex,
@@ -49,7 +53,7 @@ const Agent = ({
         });
       }}
     >
-      {!hideLabel && <code>{shortenB64(selectedKey)}</code>}
+      {!hideLabel && <code>{keyLabels[selectedKey] || shortenB64(selectedKey)}</code>}
       <IonIcon
         style={
           hideLabel
@@ -79,6 +83,9 @@ const KeyDetails = ({
   setSelectedKeyIndex: (key: [number, number]) => void;
 }) => {
   const selectedKey = publicKeys[selectedKeyIndex[0]][selectedKeyIndex[1]];
+  const { keyLabels, setKeyLabel } = useAgent();
+  const balance = usePublicKeyBalance(selectedKey);
+
   return (
     <IonContent scrollY={false}>
       <div
@@ -100,6 +107,19 @@ const KeyDetails = ({
           </IonLabel>
         </IonListHeader>
         <section className="ion-content-scroll-host">
+          <IonItem lines="none">
+            <IonLabel position="stacked">Friendly label</IonLabel>
+            <IonInput
+              value={keyLabels[selectedKey] ?? ''}
+              placeholder={shortenB64(selectedKey)}
+              onIonInput={(event) =>
+                setKeyLabel(selectedKey, event.target.value?.toString() ?? '')
+              }
+            />
+            <IonLabel className="ion-margin-top">
+              Balance: {(balance / 100000000).toFixed(8)} CRUZ
+            </IonLabel>
+          </IonItem>
           <IonAccordionGroup>
             {publicKeys.map((keys, i) => (
               <IonAccordion key={i} value={publicKeys[i][0]}>
@@ -126,7 +146,7 @@ const KeyDetails = ({
                       disabled={selectedKey === pubKey}
                     >
                       <IonLabel>
-                        <code>{shortenB64(pubKey)}</code>
+                        <code>{keyLabels[pubKey] || shortenB64(pubKey)}</code>
                         {pubKey === selectedKey && (
                           <IonIcon
                             className="ion-margin-start"

@@ -12,6 +12,8 @@ interface AppState {
   setSelectedKeyIndex: (index: [number, number]) => void;
   label: string;
   setLabel: (label: string) => void;
+  keyLabels: Record<string, string>;
+  setKeyLabels: (labels: Record<string, string>) => void;
   requestTipHeader: () => void;
   tipHeader?: BlockIdHeaderPair;
   setTipHeader: (tipHeader: BlockIdHeaderPair) => void;
@@ -48,6 +50,10 @@ interface AppState {
     publicKeyB64: string,
     resultHandler: (transactions: Transaction[]) => void,
   ) => (() => void) | undefined;
+  requestBalance: (
+    publicKeyB64: string,
+    resultHandler: (result: { public_key: string; balance: number; error?: string }) => void,
+  ) => (() => void) | undefined;
   selectedNode: string;
   setSelectedNode: (node: string) => void;
   colorScheme: 'light' | 'dark';
@@ -60,6 +66,8 @@ export const AppContext = createContext<AppState>({
   setSelectedKeyIndex: (index: [number, number]) => {},
   label: 'candidspaces',
   setLabel: (label: string) => {},
+  keyLabels: {},
+  setKeyLabels: () => {},
   tipHeader: undefined,
   requestTipHeader: () => {},
   setTipHeader: () => {},
@@ -85,6 +93,12 @@ export const AppContext = createContext<AppState>({
     () => {},
   requestPendingTransactions:
     (publicKeyB64: string, resultHandler: (transactions: Transaction[]) => void) =>
+    () => {},
+  requestBalance:
+    (
+      publicKeyB64: string,
+      resultHandler: (result: { public_key: string; balance: number; error?: string }) => void,
+    ) =>
     () => {},
   selectedNode: '',
   setSelectedNode: () => {},
