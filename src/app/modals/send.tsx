@@ -197,6 +197,14 @@ const Send = () => {
                     )}
                   </span>
                 </div>
+                <IonCard style={{ width: '100%' }}>
+                  <IonCardHeader>
+                    <IonCardSubtitle>Balance</IonCardSubtitle>
+                  </IonCardHeader>
+                  <IonCardContent>
+                    {(selectedKeyBalance / 100000000).toFixed(8)} CRUZ
+                  </IonCardContent>
+                </IonCard>
               </section>
               <IonList>
                 <IonItem lines="none">
@@ -260,16 +268,6 @@ const Send = () => {
                 Send
               </IonButton>
               <IonItemDivider />
-              <IonItem lines="none">
-                <IonCard style={{ width: '100%' }}>
-                  <IonCardHeader>
-                    <IonCardSubtitle>Balance</IonCardSubtitle>
-                  </IonCardHeader>
-                  <IonCardContent>
-                    {(selectedKeyBalance / 100000000).toFixed(8)} CRUZ
-                  </IonCardContent>
-                </IonCard>
-              </IonItem>
               {!!pendingTransactions && !!pendingTransactions.length && (
                 <TransactionList
                   heading="Pending"

@@ -129,7 +129,6 @@ const KeyDetails = ({
                       className="ion-margin-start ion-margin-end"
                       icon={arrowForwardOutline}
                     />
-                    <code>{shortenB64(publicKeys[section.sectionIndex][0])}</code>
                   </IonItem>
                   <div className="ion-padding" slot="content">
                     {section.keys.map((pubKey) => (
