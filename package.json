@@ -1,7 +1,7 @@
 {
   "name": "agent",
   "version": "0.1.0",
-  "homepage": "https://candidspaces.github.io/agent",
+  "homepage": "https://verbospatial.github.io/agent",
   "private": true,
   "dependencies": {
     "@ionic/react": "^8.5.4",
