@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { createControllerDraft, defaultControllerSettings } from './controllerUtils';
+import {
+  createControllerDraft,
+  defaultControllerSettings,
+  tryCreateControllerDraft,
+} from './controllerUtils';
 
 describe('controller draft generation', () => {
   it('omits a coordinate prefix when object namespace is empty', () => {
@@ -19,5 +23,15 @@ describe('controller draft generation', () => {
     );
 
     expect(draft.to).toEqual('Avatar/+0+1/+0+1/+0+1/000000000000000000000=');
+  });
+
+  it('returns validation errors instead of throwing for invalid drafts', () => {
+    const result = tryCreateControllerDraft(
+      { ...defaultControllerSettings, geometry: 'x'.repeat(151) },
+      { x: 0, y: 0, z: 0 },
+    );
+
+    expect(result.draft).toBeUndefined();
+    expect(result.error).toMatch(/exceeds/);
   });
 });

@@ -1,4 +1,9 @@
-import { SpatialBounds, SpatialDeclaration, createSpatialTransactionDraft } from '../../spatial/spatialTransactions';
+import {
+  SpatialBounds,
+  SpatialDeclaration,
+  SpatialTransactionDraft,
+  createSpatialTransactionDraft,
+} from '../../spatial/spatialTransactions';
 import { MinAmountCruzbits } from '../../utils/constants';
 
 export interface ControllerPosition {
@@ -54,3 +59,17 @@ export const createControllerDraft = (
     ...createMovementDeclaration(settings, position),
     amountCruzbits: settings.amountCruzbits,
   });
+
+
+export const tryCreateControllerDraft = (
+  settings: ControllerSettings,
+  position: ControllerPosition,
+): { draft: SpatialTransactionDraft; error?: undefined } | { draft?: undefined; error: string } => {
+  try {
+    return { draft: createControllerDraft(settings, position) };
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : 'Invalid spatial transaction draft',
+    };
+  }
+};

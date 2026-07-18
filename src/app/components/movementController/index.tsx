@@ -17,7 +17,7 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'r
 import { AppContext } from '../../utils/appContext';
 import { useAgent } from '../../useCases/useAgent';
 import { usePersistentState } from '../../useCases/usePersistentState';
-import { createControllerDraft, defaultControllerSettings, ControllerPosition } from './controllerUtils';
+import { defaultControllerSettings, ControllerPosition, tryCreateControllerDraft } from './controllerUtils';
 
 const useEmission = () => {
   const { pushTransaction } = useContext(AppContext);
@@ -85,7 +85,7 @@ const WasdController = ({ settings }: { settings: typeof defaultControllerSettin
   const keys = useRef(new Set<string>());
   const [position, setPosition] = useState<ControllerPosition>({ x: 0, y: 0, z: 0 });
   const [speed, setSpeed] = useState(1);
-  const draft = useMemo(() => createControllerDraft(settings, position), [settings, position]);
+  const draftResult = useMemo(() => tryCreateControllerDraft(settings, position), [settings, position]);
 
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
@@ -116,8 +116,14 @@ const WasdController = ({ settings }: { settings: typeof defaultControllerSettin
         if (keys.current.has('s')) next.z += speed;
         if (keys.current.has('q')) next.y -= speed;
         if (keys.current.has('e')) next.y += speed;
-        const nextDraft = createControllerDraft(settings, next);
-        emitter.emit(nextDraft.to, nextDraft.memo, nextDraft.amountCruzbits);
+        const nextDraftResult = tryCreateControllerDraft(settings, next);
+        if (nextDraftResult.draft) {
+          emitter.emit(
+            nextDraftResult.draft.to,
+            nextDraftResult.draft.memo,
+            nextDraftResult.draft.amountCruzbits,
+          );
+        }
         return next;
       });
     }, 250);
@@ -132,8 +138,9 @@ const WasdController = ({ settings }: { settings: typeof defaultControllerSettin
         <IonItem><IonInput label="Emission passphrase" labelPlacement="stacked" type="password" value={emitter.passphrase} onIonInput={(e) => emitter.setPassphrase(e.detail.value?.toString() ?? '')} /></IonItem>
         <IonButton expand="block" color={emitter.isActive ? 'danger' : 'primary'} onClick={() => emitter.isActive ? emitter.stop() : undefined}>{emitter.isActive ? 'Stop realtime emission' : 'Enter passphrase to start'}</IonButton>
         <IonText color="medium"><p>Use W/A/S/D to move on X/Z and Q/E for height. Position: {position.x}, {position.y}, {position.z}</p></IonText>
-        <IonTextarea readonly value={draft.to} aria-label="WASD spatial destination preview" />
-        <IonTextarea readonly value={draft.memo} aria-label="WASD spatial memo preview" />
+        {draftResult.error && <IonText color="danger"><p>{draftResult.error}</p></IonText>}
+        <IonTextarea readonly value={draftResult.draft?.to ?? ''} aria-label="WASD spatial destination preview" />
+        <IonTextarea readonly value={draftResult.draft?.memo ?? ''} aria-label="WASD spatial memo preview" />
       </IonCardContent>
     </IonCard>
   );
@@ -142,7 +149,7 @@ const WasdController = ({ settings }: { settings: typeof defaultControllerSettin
 const DrawingController = ({ settings }: { settings: typeof defaultControllerSettings }) => {
   const emitter = useEmission();
   const [lastPoint, setLastPoint] = useState<ControllerPosition | null>(null);
-  const draft = useMemo(() => createControllerDraft(settings, lastPoint ?? { x: 0, y: 0, z: 0 }), [settings, lastPoint]);
+  const draftResult = useMemo(() => tryCreateControllerDraft(settings, lastPoint ?? { x: 0, y: 0, z: 0 }), [settings, lastPoint]);
 
   const draw = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!emitter.isActive || event.buttons !== 1) return;
@@ -154,8 +161,14 @@ const DrawingController = ({ settings }: { settings: typeof defaultControllerSet
     };
     if (lastPoint && Math.hypot(point.x - lastPoint.x, point.z - lastPoint.z) < 1) return;
     setLastPoint(point);
-    const nextDraft = createControllerDraft(settings, point);
-    emitter.emit(nextDraft.to, nextDraft.memo, nextDraft.amountCruzbits);
+    const nextDraftResult = tryCreateControllerDraft(settings, point);
+    if (nextDraftResult.draft) {
+      emitter.emit(
+        nextDraftResult.draft.to,
+        nextDraftResult.draft.memo,
+        nextDraftResult.draft.amountCruzbits,
+      );
+    }
   };
 
   return (
@@ -165,8 +178,9 @@ const DrawingController = ({ settings }: { settings: typeof defaultControllerSet
         <IonItem><IonInput label="Emission passphrase" labelPlacement="stacked" type="password" value={emitter.passphrase} onIonInput={(e) => emitter.setPassphrase(e.detail.value?.toString() ?? '')} /></IonItem>
         <IonButton expand="block" color={emitter.isActive ? 'danger' : 'primary'} onClick={() => emitter.isActive ? emitter.stop() : undefined}>{emitter.isActive ? 'Stop drawing emission' : 'Enter passphrase to start'}</IonButton>
         <div onPointerMove={draw} onPointerDown={draw} style={{ height: 240, border: '1px solid var(--ion-color-medium)', borderRadius: 8, touchAction: 'none', background: 'repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(128,128,128,.18) 20px), repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(128,128,128,.18) 20px)' }} />
-        <IonTextarea readonly value={draft.to} aria-label="Drawing spatial destination preview" />
-        <IonTextarea readonly value={draft.memo} aria-label="Drawing spatial memo preview" />
+        {draftResult.error && <IonText color="danger"><p>{draftResult.error}</p></IonText>}
+        <IonTextarea readonly value={draftResult.draft?.to ?? ''} aria-label="Drawing spatial destination preview" />
+        <IonTextarea readonly value={draftResult.draft?.memo ?? ''} aria-label="Drawing spatial memo preview" />
       </IonCardContent>
     </IonCard>
   );
