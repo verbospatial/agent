@@ -9,7 +9,10 @@ import {
   IonInput,
   IonItem,
   IonItemDivider,
+  IonLabel,
   IonList,
+  IonSegment,
+  IonSegmentButton,
   IonText,
   IonTextarea,
   useIonActionSheet,
@@ -33,12 +36,12 @@ import { TransactionList } from '../components/transaction';
 import { usePendingTransactions } from '../useCases/usePendingTxs';
 import { usePubKeyTransactions } from '../useCases/usePubKeyTxs';
 import { usePublicKeyBalance } from '../useCases/usePublicKeyBalance';
-import { MinAmountCruzbits } from '../utils/constants';
+import { CRUZBIT_NODES, MinAmountCruzbits } from '../utils/constants';
 import { MovementControllerPanel } from '../components/movementController';
 import { isValidMemo, isValidPublicKeyAddress, normalizePublicKeyAddress } from '../utils/transactionValidation';
 
 const Send = () => {
-  const { pushTransaction } = useContext(AppContext);
+  const { pushTransaction, selectedNode, setSelectedNode } = useContext(AppContext);
 
   const {
     value: address,
@@ -205,6 +208,37 @@ const Send = () => {
                   style={{ textAlign: 'center', width: '100%', display: 'block' }}
                 >
                   Balance: {(selectedKeyBalance / 100000000).toFixed(8)} CRUZ
+                </IonText>
+              </section>
+              <section className="ion-padding-start ion-padding-end ion-padding-bottom">
+                <IonText color="medium">
+                  <p style={{ marginBottom: '0.5rem' }}>Node endpoint</p>
+                </IonText>
+                <IonSegment
+                  value={selectedNode}
+                  onIonChange={(event) => {
+                    const nextNode = event.detail.value?.toString();
+                    if (nextNode) {
+                      setSelectedNode(nextNode);
+                    }
+                  }}
+                >
+                  {CRUZBIT_NODES.map((node) => (
+                    <IonSegmentButton key={node.value} value={node.value}>
+                      <IonLabel>{node.label}</IonLabel>
+                    </IonSegmentButton>
+                  ))}
+                </IonSegment>
+                <IonText color="medium">
+                  <p
+                    style={{
+                      marginTop: '0.5rem',
+                      overflowWrap: 'anywhere',
+                      fontSize: '0.75rem',
+                    }}
+                  >
+                    wss://{selectedNode}
+                  </p>
                 </IonText>
               </section>
               <MovementControllerPanel />
