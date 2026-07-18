@@ -251,14 +251,18 @@ const App: React.FC = () => {
         } as any,
       });
 
-      return socketEventListener<{
+      let cleanupResultListener: (() => void) | undefined;
+      cleanupResultListener = socketEventListener<{
         transaction_id: string;
         error: string;
       }>('push_transaction_result', (data) => {
         if (transactionID(transaction) === data.transaction_id) {
           resultHandler(data);
+          cleanupResultListener?.();
         }
       });
+
+      return cleanupResultListener;
     }
   };
 

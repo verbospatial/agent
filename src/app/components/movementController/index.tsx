@@ -13,7 +13,7 @@ import {
   IonTextarea,
   useIonToast,
 } from '@ionic/react';
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppContext } from '../../utils/appContext';
 import { useAgent } from '../../useCases/useAgent';
 import { usePersistentState } from '../../useCases/usePersistentState';
@@ -23,27 +23,56 @@ const useEmission = () => {
   const { pushTransaction } = useContext(AppContext);
   const { selectedKeyIndex, label } = useAgent();
   const [passphrase, setPassphrase] = useState('');
+  const pendingResultCleanups = useRef(new Set<() => void>());
   const [presentToast] = useIonToast();
+
+  const cleanupPendingResults = useCallback(() => {
+    pendingResultCleanups.current.forEach((cleanup) => cleanup());
+    pendingResultCleanups.current.clear();
+  }, []);
 
   const emit = async (to: string, memo: string, amountCruzbits: number) => {
     if (!passphrase) return;
-    await pushTransaction(to, memo, amountCruzbits, passphrase, label, selectedKeyIndex, (data) => {
-      if (data.error) {
-        presentToast({ message: data.error, duration: 3000, position: 'bottom' });
-      }
-    });
+
+    let resultCleanup: (() => void) | undefined;
+    resultCleanup = await pushTransaction(
+      to,
+      memo,
+      amountCruzbits,
+      passphrase,
+      label,
+      selectedKeyIndex,
+      (data) => {
+        if (data.error) {
+          presentToast({ message: data.error, duration: 3000, position: 'bottom' });
+        }
+
+        if (resultCleanup) {
+          resultCleanup();
+          pendingResultCleanups.current.delete(resultCleanup);
+        }
+      },
+    );
+
+    if (resultCleanup) {
+      pendingResultCleanups.current.add(resultCleanup);
+    }
   };
 
+  const stop = useCallback(() => {
+    setPassphrase('');
+    cleanupPendingResults();
+  }, [cleanupPendingResults]);
+
   useEffect(() => {
-    const stop = () => setPassphrase('');
     window.addEventListener('blur', stop);
     return () => {
       window.removeEventListener('blur', stop);
       stop();
     };
-  }, []);
+  }, [stop]);
 
-  return { isActive: !!passphrase, passphrase, setPassphrase, stop: () => setPassphrase(''), emit };
+  return { isActive: !!passphrase, passphrase, setPassphrase, stop, emit };
 };
 
 const focusedEditable = () => {
