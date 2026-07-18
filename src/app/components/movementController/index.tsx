@@ -113,7 +113,7 @@ const WasdController = ({ settings }: { settings: typeof defaultControllerSettin
 const DrawingController = ({ settings }: { settings: typeof defaultControllerSettings }) => {
   const emitter = useEmission();
   const [lastPoint, setLastPoint] = useState<ControllerPosition | null>(null);
-  const draft = useMemo(() => createControllerDraft(settings, lastPoint ?? { x: 0, y: 0, z: 0 }, lastPoint ? 'Stroke' : 'Preview'), [settings, lastPoint]);
+  const draft = useMemo(() => createControllerDraft(settings, lastPoint ?? { x: 0, y: 0, z: 0 }), [settings, lastPoint]);
 
   const draw = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!emitter.isActive || event.buttons !== 1) return;
@@ -125,7 +125,7 @@ const DrawingController = ({ settings }: { settings: typeof defaultControllerSet
     };
     if (lastPoint && Math.hypot(point.x - lastPoint.x, point.z - lastPoint.z) < 1) return;
     setLastPoint(point);
-    const nextDraft = createControllerDraft(settings, point, `Stroke/${Date.now()}`);
+    const nextDraft = createControllerDraft(settings, point);
     emitter.emit(nextDraft.to, nextDraft.memo, nextDraft.amountCruzbits);
   };
 

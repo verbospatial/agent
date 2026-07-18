@@ -9,7 +9,7 @@ describe('controller draft generation', () => {
     );
 
     expect(draft.memo).toEqual(
-      'Controller/Body/+2+1/+0+1/+-1+1 : geometry: box; color: 0x33aaff',
+      'Controller/+2+1/+0+1/+-1+1 : geometry: box; color: 0x33aaff',
     );
   });
 });

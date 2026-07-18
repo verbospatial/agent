@@ -28,7 +28,7 @@ export const defaultControllerSettings: ControllerSettings = {
 export const createMovementDeclaration = (
   settings: ControllerSettings,
   position: ControllerPosition,
-  suffix = 'Body',
+  suffix?: string,
 ): SpatialDeclaration => {
   const bounds: SpatialBounds = {
     x: position.x,
@@ -40,7 +40,7 @@ export const createMovementDeclaration = (
   };
 
   return {
-    name: `${settings.namespace}/${suffix}`,
+    name: suffix ? `${settings.namespace}/${suffix}` : settings.namespace,
     bounds,
     properties: {
       geometry: settings.geometry,
