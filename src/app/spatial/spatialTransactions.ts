@@ -35,13 +35,14 @@ export const formatSpatialAxis = (start: SpatialUnitValue, size: SpatialUnitValu
   `+${formatUnit(start)}+${formatUnit(size)}`;
 
 export const formatSpatialPath = ({ name, bounds }: Pick<SpatialDeclaration, 'name' | 'bounds'>) => {
-  const safeName = sanitizeSegment(name) || 'Controller';
-  return [
-    safeName,
+  const safeName = sanitizeSegment(name);
+  const coordinates = [
     formatSpatialAxis(bounds.x, bounds.width),
     formatSpatialAxis(bounds.y, bounds.height),
     formatSpatialAxis(bounds.z, bounds.depth),
-  ].join('/');
+  ];
+
+  return safeName ? [safeName, ...coordinates].join('/') : coordinates.join('/');
 };
 
 export const formatSpatialToField = (spatialPath: string) => {

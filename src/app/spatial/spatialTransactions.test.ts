@@ -20,6 +20,13 @@ describe('spatial transaction formatting', () => {
     );
   });
 
+
+  it('omits the path prefix when the declaration name is empty', () => {
+    expect(formatSpatialPath({ ...explorerDeclarationFixtures[0], name: '' })).toEqual(
+      '+0+1/+0+1/+0+1',
+    );
+  });
+
   it('serializes declaration properties', () => {
     expect(serializeSpatialProperties({ geometry: 'box', color: '0x33aaff' })).toEqual(
       'geometry: box; color: 0x33aaff',

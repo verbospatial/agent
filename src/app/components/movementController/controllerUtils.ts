@@ -16,7 +16,7 @@ export interface ControllerSettings {
 }
 
 export const defaultControllerSettings: ControllerSettings = {
-  namespace: 'Controller',
+  namespace: '',
   geometry: 'box',
   color: '0x33aaff',
   amountCruzbits: MinAmountCruzbits,
