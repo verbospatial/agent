@@ -34,6 +34,8 @@ import { usePendingTransactions } from '../useCases/usePendingTxs';
 import { usePubKeyTransactions } from '../useCases/usePubKeyTxs';
 import { usePublicKeyBalance } from '../useCases/usePublicKeyBalance';
 import { MinAmountCruzbits } from '../utils/constants';
+import { MovementControllerPanel } from '../components/movementController';
+import { isValidMemo, isValidPublicKeyAddress, normalizePublicKeyAddress } from '../utils/transactionValidation';
 
 const Send = () => {
   const { pushTransaction } = useContext(AppContext);
@@ -45,7 +47,7 @@ const Send = () => {
     isTouched: isAddressTouched,
     onInputChange: setAddress,
   } = useInputValidationProps(
-    (address: string) => new RegExp('[A-Za-z0-9/+]{43}=').test(address),
+    isValidPublicKeyAddress,
     '',
   );
 
@@ -56,7 +58,7 @@ const Send = () => {
     isTouched: isMemoTouched,
     onInputChange: setMemo,
   } = useInputValidationProps(
-    (memo: string) => memo.length > 0 || memo.length <= 150,
+    isValidMemo,
   );
 
   const [presentToast] = useIonToast();
@@ -205,6 +207,8 @@ const Send = () => {
                   Balance: {(selectedKeyBalance / 100000000).toFixed(8)} CRUZ
                 </IonText>
               </section>
+              <MovementControllerPanel />
+              <IonItemDivider />
               <IonList>
                 <IonItem lines="none">
                   <IonInput
@@ -221,12 +225,8 @@ const Send = () => {
                         : address
                     }
                     onIonBlur={() => {
-                      if (!new RegExp('[A-Za-z0-9/+]{43}=').test(address)) {
-                        setAddress(
-                          `${address
-                            .replace(/[^A-Za-z0-9/+]/gi, '')
-                            .padEnd(43, '0')}=`,
-                        );
+                      if (!isValidPublicKeyAddress(address)) {
+                        setAddress(normalizePublicKeyAddress(address));
                       }
                       onBlurAddress();
                     }}
