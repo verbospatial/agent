@@ -8,7 +8,6 @@ export interface ControllerPosition {
 }
 
 export interface ControllerSettings {
-  targetAddress: string;
   namespace: string;
   geometry: string;
   color: string;
@@ -17,7 +16,6 @@ export interface ControllerSettings {
 }
 
 export const defaultControllerSettings: ControllerSettings = {
-  targetAddress: '',
   namespace: 'Controller',
   geometry: 'box',
   color: '0x33aaff',
@@ -56,6 +54,5 @@ export const createControllerDraft = (
 ) =>
   createSpatialTransactionDraft({
     ...createMovementDeclaration(settings, position, suffix),
-    to: settings.targetAddress,
     amountCruzbits: settings.amountCruzbits,
   });

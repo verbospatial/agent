@@ -24,6 +24,8 @@ export interface SpatialTransactionDraft {
   amountCruzbits: number;
 }
 
+const TO_FIELD_DATA_LENGTH = 43;
+
 const sanitizeSegment = (value: string) =>
   value.trim().replace(/\s+/g, '-').replace(/[^A-Za-z0-9._/-]/g, '').replace(/^\/+|\/+$/g, '');
 
@@ -42,6 +44,18 @@ export const formatSpatialPath = ({ name, bounds }: Pick<SpatialDeclaration, 'na
   ].join('/');
 };
 
+export const formatSpatialToField = (spatialPath: string) => {
+  if (spatialPath.length > TO_FIELD_DATA_LENGTH) {
+    throw new Error(`Spatial to field path exceeds ${TO_FIELD_DATA_LENGTH} characters`);
+  }
+
+  const suffix = spatialPath.length < TO_FIELD_DATA_LENGTH
+    ? `/${'0'.repeat(TO_FIELD_DATA_LENGTH - spatialPath.length - 1)}`
+    : '';
+
+  return `${spatialPath}${suffix}=`;
+};
+
 export const serializeSpatialProperties = (
   properties: SpatialDeclaration['properties'],
 ) =>
@@ -51,9 +65,7 @@ export const serializeSpatialProperties = (
     .join('; ');
 
 export const createSpatialMemo = (declaration: SpatialDeclaration) => {
-  const memo = `${formatSpatialPath(declaration)} : ${serializeSpatialProperties(
-    declaration.properties,
-  )}`;
+  const memo = serializeSpatialProperties(declaration.properties);
 
   if (getUtf8ByteLength(memo) > MAX_MEMO_BYTES) {
     throw new Error(`Spatial memo exceeds ${MAX_MEMO_BYTES} bytes`);
@@ -63,11 +75,10 @@ export const createSpatialMemo = (declaration: SpatialDeclaration) => {
 };
 
 export const createSpatialTransactionDraft = ({
-  to,
   amountCruzbits = MinAmountCruzbits,
   ...declaration
-}: SpatialDeclaration & { to: string; amountCruzbits?: number }): SpatialTransactionDraft => ({
-  to,
+}: SpatialDeclaration & { amountCruzbits?: number }): SpatialTransactionDraft => ({
+  to: formatSpatialToField(formatSpatialPath(declaration)),
   memo: createSpatialMemo(declaration),
   amountCruzbits,
 });

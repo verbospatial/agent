@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   createSpatialMemo,
+  createSpatialTransactionDraft,
   formatSpatialAxis,
   formatSpatialPath,
   serializeSpatialProperties,
@@ -25,9 +26,15 @@ describe('spatial transaction formatting', () => {
     );
   });
 
-  it('creates compact memos compatible with explorer declarations', () => {
+  it('puts the spatial coordinates in the padded to field', () => {
+    expect(createSpatialTransactionDraft(explorerDeclarationFixtures[0]).to).toEqual(
+      'Box/+0+1/+0+1/+0+1/000000000000000000000000=',
+    );
+  });
+
+  it('creates memos with object properties only', () => {
     expect(createSpatialMemo(explorerDeclarationFixtures[0])).toEqual(
-      'Box/+0+1/+0+1/+0+1 : geometry: box; color: 0x33aaff',
+      'geometry: box; color: 0x33aaff',
     );
   });
 

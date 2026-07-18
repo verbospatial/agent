@@ -17,7 +17,6 @@ import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppContext } from '../../utils/appContext';
 import { useAgent } from '../../useCases/useAgent';
 import { usePersistentState } from '../../useCases/usePersistentState';
-import { isValidPublicKeyAddress, normalizePublicKeyAddress } from '../../utils/transactionValidation';
 import { createControllerDraft, defaultControllerSettings, ControllerPosition } from './controllerUtils';
 
 const useEmission = () => {
@@ -104,6 +103,7 @@ const WasdController = ({ settings }: { settings: typeof defaultControllerSettin
         <IonItem><IonInput label="Emission passphrase" labelPlacement="stacked" type="password" value={emitter.passphrase} onIonInput={(e) => emitter.setPassphrase(e.detail.value?.toString() ?? '')} /></IonItem>
         <IonButton expand="block" color={emitter.isActive ? 'danger' : 'primary'} onClick={() => emitter.isActive ? emitter.stop() : undefined}>{emitter.isActive ? 'Stop realtime emission' : 'Enter passphrase to start'}</IonButton>
         <IonText color="medium"><p>Use W/A/S/D to move on X/Z and Q/E for height. Position: {position.x}, {position.y}, {position.z}</p></IonText>
+        <IonTextarea readonly value={draft.to} aria-label="WASD spatial destination preview" />
         <IonTextarea readonly value={draft.memo} aria-label="WASD spatial memo preview" />
       </IonCardContent>
     </IonCard>
@@ -136,6 +136,7 @@ const DrawingController = ({ settings }: { settings: typeof defaultControllerSet
         <IonItem><IonInput label="Emission passphrase" labelPlacement="stacked" type="password" value={emitter.passphrase} onIonInput={(e) => emitter.setPassphrase(e.detail.value?.toString() ?? '')} /></IonItem>
         <IonButton expand="block" color={emitter.isActive ? 'danger' : 'primary'} onClick={() => emitter.isActive ? emitter.stop() : undefined}>{emitter.isActive ? 'Stop drawing emission' : 'Enter passphrase to start'}</IonButton>
         <div onPointerMove={draw} onPointerDown={draw} style={{ height: 240, border: '1px solid var(--ion-color-medium)', borderRadius: 8, touchAction: 'none', background: 'repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(128,128,128,.18) 20px), repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(128,128,128,.18) 20px)' }} />
+        <IonTextarea readonly value={draft.to} aria-label="Drawing spatial destination preview" />
         <IonTextarea readonly value={draft.memo} aria-label="Drawing spatial memo preview" />
       </IonCardContent>
     </IonCard>
@@ -144,35 +145,29 @@ const DrawingController = ({ settings }: { settings: typeof defaultControllerSet
 
 export const MovementControllerPanel = () => {
   const [mode, setMode] = usePersistentState<'wasd' | 'drawing'>('controller-mode', 'wasd');
-  const [targetAddress, setTargetAddress] = usePersistentState('primary-environment-address', '');
   const [namespace, setNamespace] = usePersistentState('controller-object-namespace', 'Controller');
   const [geometry, setGeometry] = usePersistentState('controller-geometry', 'box');
   const [color, setColor] = usePersistentState('controller-color', '0x33aaff');
   const [amountCruzbits, setAmountCruzbits] = usePersistentState('controller-amount-cruzbits', defaultControllerSettings.amountCruzbits);
 
-  const settings = useMemo(() => ({ ...defaultControllerSettings, targetAddress, namespace, geometry, color, amountCruzbits }), [targetAddress, namespace, geometry, color, amountCruzbits]);
-  const validTarget = isValidPublicKeyAddress(targetAddress);
+  const settings = useMemo(() => ({ ...defaultControllerSettings, namespace, geometry, color, amountCruzbits }), [namespace, geometry, color, amountCruzbits]);
 
   return (
     <section className="ion-padding">
       <IonCard>
         <IonCardHeader><IonCardSubtitle>Primary environment controller</IonCardSubtitle></IonCardHeader>
         <IonCardContent>
-          <IonItem>
-            <IonInput label="Primary environment address" labelPlacement="stacked" value={targetAddress.substring(40) === '000=' ? targetAddress.replace(/0+=?$/g, '') : targetAddress} onIonBlur={() => !validTarget && setTargetAddress(normalizePublicKeyAddress(targetAddress))} onIonInput={(event) => setTargetAddress(event.detail.value?.toString() ?? '')} />
-          </IonItem>
           <IonItem><IonInput label="Object namespace" labelPlacement="stacked" value={namespace} onIonInput={(e) => setNamespace(e.detail.value?.toString() ?? 'Controller')} /></IonItem>
           <IonItem><IonInput label="Geometry" labelPlacement="stacked" value={geometry} onIonInput={(e) => setGeometry(e.detail.value?.toString() ?? 'box')} /></IonItem>
           <IonItem><IonInput label="Color/material" labelPlacement="stacked" value={color} onIonInput={(e) => setColor(e.detail.value?.toString() ?? '0x33aaff')} /></IonItem>
           <IonItem><IonInput label="Amount (cruzbits)" labelPlacement="stacked" type="number" value={amountCruzbits} onIonInput={(e) => setAmountCruzbits(Number(e.detail.value) || defaultControllerSettings.amountCruzbits)} /></IonItem>
-          {!validTarget && <IonText color="warning"><p>Set a valid primary environment address before emitting.</p></IonText>}
           <IonSegment value={mode} onIonChange={(event) => setMode((event.detail.value as 'wasd' | 'drawing') ?? 'wasd')}>
             <IonSegmentButton value="wasd"><IonLabel>WASD</IonLabel></IonSegmentButton>
             <IonSegmentButton value="drawing"><IonLabel>Drawing</IonLabel></IonSegmentButton>
           </IonSegment>
         </IonCardContent>
       </IonCard>
-      {validTarget && (mode === 'wasd' ? <WasdController settings={settings} /> : <DrawingController settings={settings} />)}
+      {mode === 'wasd' ? <WasdController settings={settings} /> : <DrawingController settings={settings} />}
     </section>
   );
 };
