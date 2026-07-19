@@ -187,7 +187,9 @@ const DrawingController = ({ settings }: { settings: typeof defaultControllerSet
 };
 
 export const MovementControllerPanel = ({ plainTextTransaction }: { plainTextTransaction: ReactNode }) => {
-  const [mode, setMode] = usePersistentState<'plain-text' | 'wasd' | 'drawing'>('controller-mode', 'plain-text');
+  // Use a new key so the prior controller-mode default ("wasd") does not hide
+  // the newly introduced plain-text transaction flow for returning users.
+  const [mode, setMode] = usePersistentState<'plain-text' | 'wasd' | 'drawing'>('transaction-mode', 'plain-text');
   const [namespace, setNamespace] = usePersistentState('controller-object-namespace', '');
   const [geometry, setGeometry] = usePersistentState('controller-geometry', 'box');
   const [color, setColor] = usePersistentState('controller-color', '0x33aaff');
