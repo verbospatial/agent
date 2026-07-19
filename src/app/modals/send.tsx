@@ -241,65 +241,69 @@ const Send = () => {
                   </p>
                 </IonText>
               </section>
-              <MovementControllerPanel />
-              <IonItemDivider />
-              <IonList>
-                <IonItem lines="none">
-                  <IonInput
-                    className={`${isAddressValid && 'ion-valid'} ${
-                      isAddressValid === false && 'ion-invalid'
-                    } ${isAddressTouched && 'ion-touched'}`}
-                    label="Address"
-                    labelPlacement="stacked"
-                    clearInput={true}
-                    errorText="Invalid address"
-                    value={
-                      address.substring(40) === '000='
-                        ? address.replace(/0+=?$/g, '')
-                        : address
-                    }
-                    onIonBlur={() => {
-                      if (!isValidPublicKeyAddress(address)) {
-                        setAddress(normalizePublicKeyAddress(address));
-                      }
-                      onBlurAddress();
-                    }}
-                    onIonInput={(event) =>
-                      setAddress(event.target.value?.toString() ?? '')
-                    }
-                  />
-                </IonItem>
+              <MovementControllerPanel
+                plainTextTransaction={
+                  <>
+                    <IonList>
+                      <IonItem lines="none">
+                        <IonInput
+                          className={`${isAddressValid && 'ion-valid'} ${
+                            isAddressValid === false && 'ion-invalid'
+                          } ${isAddressTouched && 'ion-touched'}`}
+                          label="Address"
+                          labelPlacement="stacked"
+                          clearInput={true}
+                          errorText="Invalid address"
+                          value={
+                            address.substring(40) === '000='
+                              ? address.replace(/0+=?$/g, '')
+                              : address
+                          }
+                          onIonBlur={() => {
+                            if (!isValidPublicKeyAddress(address)) {
+                              setAddress(normalizePublicKeyAddress(address));
+                            }
+                            onBlurAddress();
+                          }}
+                          onIonInput={(event) =>
+                            setAddress(event.target.value?.toString() ?? '')
+                          }
+                        />
+                      </IonItem>
 
-                <IonItem lines="none">
-                  <IonTextarea
-                    className={`${isMemoValid && 'ion-valid'} ${
-                      isMemoValid === false && 'ion-invalid'
-                    } ${isMemoTouched && 'ion-touched'}`}
-                    label="Memo"
-                    placeholder=""
-                    labelPlacement="stacked"
-                    counter={true}
-                    maxlength={150}
-                    value={memo}
-                    onIonBlur={onBlurMemo}
-                    onIonInput={(event) => setMemo(event.target.value ?? '')}
-                  />
-                </IonItem>
-              </IonList>
-              <IonButton
-                disabled={!isAddressValid || !isMemoValid}
-                expand="block"
-                className="ion-padding ion-no-margin"
-                strong={true}
-                onClick={() =>
-                  presentModal({
-                    initialBreakpoint: 0.75,
-                    breakpoints: [0, 0.75],
-                  })
+                      <IonItem lines="none">
+                        <IonTextarea
+                          className={`${isMemoValid && 'ion-valid'} ${
+                            isMemoValid === false && 'ion-invalid'
+                          } ${isMemoTouched && 'ion-touched'}`}
+                          label="Memo"
+                          placeholder=""
+                          labelPlacement="stacked"
+                          counter={true}
+                          maxlength={150}
+                          value={memo}
+                          onIonBlur={onBlurMemo}
+                          onIonInput={(event) => setMemo(event.target.value ?? '')}
+                        />
+                      </IonItem>
+                    </IonList>
+                    <IonButton
+                      disabled={!isAddressValid || !isMemoValid}
+                      expand="block"
+                      className="ion-padding ion-no-margin"
+                      strong={true}
+                      onClick={() =>
+                        presentModal({
+                          initialBreakpoint: 0.75,
+                          breakpoints: [0, 0.75],
+                        })
+                      }
+                    >
+                      Send
+                    </IonButton>
+                  </>
                 }
-              >
-                Send
-              </IonButton>
+              />
               <IonItemDivider />
               {!!pendingTransactions && !!pendingTransactions.length && (
                 <TransactionList

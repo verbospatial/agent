@@ -13,7 +13,7 @@ import {
   IonTextarea,
   useIonToast,
 } from '@ionic/react';
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppContext } from '../../utils/appContext';
 import { useAgent } from '../../useCases/useAgent';
 import { usePersistentState } from '../../useCases/usePersistentState';
@@ -186,8 +186,10 @@ const DrawingController = ({ settings }: { settings: typeof defaultControllerSet
   );
 };
 
-export const MovementControllerPanel = () => {
-  const [mode, setMode] = usePersistentState<'wasd' | 'drawing'>('controller-mode', 'wasd');
+export const MovementControllerPanel = ({ plainTextTransaction }: { plainTextTransaction: ReactNode }) => {
+  // Use a new key so the prior controller-mode default ("wasd") does not hide
+  // the newly introduced plain-text transaction flow for returning users.
+  const [mode, setMode] = usePersistentState<'plain-text' | 'wasd' | 'drawing'>('transaction-mode', 'plain-text');
   const [namespace, setNamespace] = usePersistentState('controller-object-namespace', '');
   const [geometry, setGeometry] = usePersistentState('controller-geometry', 'box');
   const [color, setColor] = usePersistentState('controller-color', '0x33aaff');
@@ -198,19 +200,24 @@ export const MovementControllerPanel = () => {
   return (
     <section className="ion-padding">
       <IonCard>
-        <IonCardHeader><IonCardSubtitle>Primary environment controller</IonCardSubtitle></IonCardHeader>
+        <IonCardHeader><IonCardSubtitle>Transaction mode</IonCardSubtitle></IonCardHeader>
         <IonCardContent>
-          <IonItem><IonInput label="Object namespace" labelPlacement="stacked" value={namespace} onIonInput={(e) => setNamespace(e.detail.value?.toString() ?? '')} /></IonItem>
-          <IonItem><IonInput label="Geometry" labelPlacement="stacked" value={geometry} onIonInput={(e) => setGeometry(e.detail.value?.toString() ?? 'box')} /></IonItem>
-          <IonItem><IonInput label="Color/material" labelPlacement="stacked" value={color} onIonInput={(e) => setColor(e.detail.value?.toString() ?? '0x33aaff')} /></IonItem>
-          <IonItem><IonInput label="Amount (cruzbits)" labelPlacement="stacked" type="number" value={amountCruzbits} onIonInput={(e) => setAmountCruzbits(Number(e.detail.value) || defaultControllerSettings.amountCruzbits)} /></IonItem>
-          <IonSegment value={mode} onIonChange={(event) => setMode((event.detail.value as 'wasd' | 'drawing') ?? 'wasd')}>
+          <IonSegment value={mode} onIonChange={(event) => setMode((event.detail.value as 'plain-text' | 'wasd' | 'drawing') ?? 'plain-text')}>
+            <IonSegmentButton value="plain-text"><IonLabel>Plain text</IonLabel></IonSegmentButton>
             <IonSegmentButton value="wasd"><IonLabel>WASD</IonLabel></IonSegmentButton>
             <IonSegmentButton value="drawing"><IonLabel>Drawing</IonLabel></IonSegmentButton>
           </IonSegment>
+          {mode !== 'plain-text' && <>
+            <IonItem><IonInput label="Object namespace" labelPlacement="stacked" value={namespace} onIonInput={(e) => setNamespace(e.detail.value?.toString() ?? '')} /></IonItem>
+            <IonItem><IonInput label="Geometry" labelPlacement="stacked" value={geometry} onIonInput={(e) => setGeometry(e.detail.value?.toString() ?? 'box')} /></IonItem>
+            <IonItem><IonInput label="Color/material" labelPlacement="stacked" value={color} onIonInput={(e) => setColor(e.detail.value?.toString() ?? '0x33aaff')} /></IonItem>
+            <IonItem><IonInput label="Amount (cruzbits)" labelPlacement="stacked" type="number" value={amountCruzbits} onIonInput={(e) => setAmountCruzbits(Number(e.detail.value) || defaultControllerSettings.amountCruzbits)} /></IonItem>
+          </>}
         </IonCardContent>
       </IonCard>
-      {mode === 'wasd' ? <WasdController settings={settings} /> : <DrawingController settings={settings} />}
+      {mode === 'plain-text' && plainTextTransaction}
+      {mode === 'wasd' && <WasdController settings={settings} />}
+      {mode === 'drawing' && <DrawingController settings={settings} />}
     </section>
   );
 };
