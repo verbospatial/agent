@@ -44,21 +44,50 @@ function generateHDKeypair(
   readOnly: boolean = true,
 ) {
   const masterSeed = bip39.mnemonicToSeedSync(mnemonic);
-
   const derivedSeed = deriveHDSeed(
     new Uint8Array(masterSeed),
     account,
     address,
     labelValue,
   );
-  const keypair = nacl.sign.keyPair.fromSeed(derivedSeed);
+  try {
+    const keypair = nacl.sign.keyPair.fromSeed(derivedSeed);
 
-  return {
-    path: `m/${account}/${address}`,
-    publicKey: Buffer.from(keypair.publicKey).toString('base64'),
-    privateKey: readOnly ? null : keypair.secretKey,
-  };
+    return {
+      path: `m/${account}/${address}`,
+      publicKey: Buffer.from(keypair.publicKey).toString('base64'),
+      privateKey: readOnly ? null : keypair.secretKey,
+    };
+  } finally {
+    masterSeed.fill(0);
+    derivedSeed.fill(0);
+  }
 }
+
+/**
+ * Returns an encoded secret key only after confirming that the passphrase
+ * derives the public key selected by the user. The returned value must not be
+ * persisted or logged by callers.
+ */
+export const exportPrivateKey = (
+  passphrase: string,
+  labelValue: string,
+  agentIndex: [number, number],
+  expectedPublicKey: string,
+): string | null => {
+  const mnemonic = generateMnemonic(passphrase);
+  const keypair = generateHDKeypair(mnemonic, ...agentIndex, labelValue, false);
+
+  try {
+    if (keypair.publicKey !== expectedPublicKey || !keypair.privateKey) {
+      return null;
+    }
+
+    return Buffer.from(keypair.privateKey).toString('base64');
+  } finally {
+    keypair.privateKey?.fill(0);
+  }
+};
 
 const getPersonas = (
   passphrase: string,
@@ -115,9 +144,13 @@ export const signTransaction = async (
     (tx_hash.match(/.{1,2}/g) || []).map((byte) => parseInt(byte, 16)),
   );
 
-  transaction.signature = naclUtil.encodeBase64(
-    nacl.sign.detached(tx_byte, keyPair.privateKey!),
-  );
+  try {
+    transaction.signature = naclUtil.encodeBase64(
+      nacl.sign.detached(tx_byte, keyPair.privateKey!),
+    );
+  } finally {
+    keyPair.privateKey?.fill(0);
+  }
   return transaction;
 };
 
