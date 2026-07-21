@@ -192,12 +192,14 @@ const Send = () => {
             isOpen={isPrivateKeyExportOpen}
             onDidDismiss={() => setIsPrivateKeyExportOpen(false)}
           >
-            <PrivateKeyExport
-              publicKey={selectedKey}
-              selectedKeyIndex={selectedKeyIndex}
-              label={label}
-              onComplete={() => setIsPrivateKeyExportOpen(false)}
-            />
+            {isPrivateKeyExportOpen && (
+              <PrivateKeyExport
+                publicKey={selectedKey}
+                selectedKeyIndex={selectedKeyIndex}
+                label={label}
+                onComplete={() => setIsPrivateKeyExportOpen(false)}
+              />
+            )}
           </IonModal>
           {!selectedKey ? (
             <SetupAgent importKeys={importAgent} />
