@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import {
   IonButton,
   IonCard,
@@ -11,6 +11,7 @@ import {
   IonItemDivider,
   IonLabel,
   IonList,
+  IonModal,
   IonSegment,
   IonSegmentButton,
   IonText,
@@ -38,6 +39,7 @@ import { usePubKeyTransactions } from '../useCases/usePubKeyTxs';
 import { usePublicKeyBalance } from '../useCases/usePublicKeyBalance';
 import { CRUZBIT_NODES, MinAmountCruzbits } from '../utils/constants';
 import { MovementControllerPanel } from '../components/movementController';
+import { PrivateKeyExport } from '../components/privateKeyExport';
 import { isValidMemo, isValidPublicKeyAddress, normalizePublicKeyAddress } from '../utils/transactionValidation';
 
 const Send = () => {
@@ -124,10 +126,14 @@ const Send = () => {
   const selectedKey = publicKeys[selectedKeyIndex[0]][selectedKeyIndex[1]];
 
   const [presentActionSheet] = useIonActionSheet();
+  const [isPrivateKeyExportOpen, setIsPrivateKeyExportOpen] = useState(false);
 
   const handleActionSheet = ({ data, role }: OverlayEventDetail) => {
     if (data?.['action'] === 'delete') {
       deleteAgent();
+    }
+    if (data?.['action'] === 'export-private-key') {
+      setIsPrivateKeyExportOpen(true);
     }
   };
 
@@ -155,6 +161,12 @@ const Send = () => {
                     header: 'Actions',
                     buttons: [
                       {
+                        text: 'Export private key',
+                        data: {
+                          action: 'export-private-key',
+                        },
+                      },
+                      {
                         text: 'Delete agent',
                         role: 'destructive',
                         data: {
@@ -176,6 +188,19 @@ const Send = () => {
       }
       renderBody={() => (
         <>
+          <IonModal
+            isOpen={isPrivateKeyExportOpen}
+            onDidDismiss={() => setIsPrivateKeyExportOpen(false)}
+          >
+            {isPrivateKeyExportOpen && (
+              <PrivateKeyExport
+                publicKey={selectedKey}
+                selectedKeyIndex={selectedKeyIndex}
+                label={label}
+                onComplete={() => setIsPrivateKeyExportOpen(false)}
+              />
+            )}
+          </IonModal>
           {!selectedKey ? (
             <SetupAgent importKeys={importAgent} />
           ) : (
