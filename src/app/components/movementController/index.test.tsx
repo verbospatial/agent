@@ -32,7 +32,8 @@ afterEach(() => {
 describe('MovementControllerPanel WASD mode', () => {
   it('arms only after Start, releases input focus, and emits movement keys outside editable fields', async () => {
     vi.useFakeTimers();
-    const pushTransaction = vi.fn().mockResolvedValue(undefined);
+    const cleanupResultListener = vi.fn();
+    const pushTransaction = vi.fn().mockResolvedValue(cleanupResultListener);
 
     render(
       <AppContext.Provider value={{ pushTransaction } as never}>
@@ -73,5 +74,8 @@ describe('MovementControllerPanel WASD mode', () => {
 
     expect(pushTransaction).toHaveBeenCalledTimes(1);
     expect(screen.getByText(/Position: 0, 0, -1/)).toBeInTheDocument();
+
+    fireEvent.change(passphrase, { target: { value: 'updated passphrase' } });
+    expect(cleanupResultListener).toHaveBeenCalledTimes(1);
   });
 });

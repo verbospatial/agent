@@ -74,7 +74,8 @@ const useEmission = () => {
   const updatePassphrase = useCallback((value: string) => {
     setPassphrase(value);
     setIsActive(false);
-  }, []);
+    cleanupPendingResults();
+  }, [cleanupPendingResults]);
 
   useEffect(() => {
     window.addEventListener('blur', stop);
