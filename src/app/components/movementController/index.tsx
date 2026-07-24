@@ -47,6 +47,14 @@ const useEmission = (emissionsPerSecond: number) => {
 
     await new Promise<void>((resolve, reject) => {
       let resultCleanup: (() => void) | undefined;
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        resultCleanup?.();
+        pendingResultCleanups.current.delete(finish);
+        resolve();
+      };
       void pushTransaction(
         to,
         memo,
@@ -58,14 +66,13 @@ const useEmission = (emissionsPerSecond: number) => {
           if (data.error) {
             presentToast({ message: data.error, duration: 3000, position: 'bottom' });
           }
-          resultCleanup?.();
-          if (resultCleanup) pendingResultCleanups.current.delete(resultCleanup);
-          resolve();
+          finish();
         },
       ).then((cleanup) => {
         resultCleanup = cleanup;
-        if (resultCleanup) pendingResultCleanups.current.add(resultCleanup);
-        else resolve();
+        if (settled) resultCleanup?.();
+        else if (resultCleanup) pendingResultCleanups.current.add(finish);
+        else finish();
       }).catch(reject);
     });
   };
