@@ -6,13 +6,13 @@ import {
 } from './controllerUtils';
 
 describe('controller draft generation', () => {
-  it('omits a coordinate prefix when object namespace is empty', () => {
+  it('clamps negative coordinates when object namespace is empty', () => {
     const draft = createControllerDraft(
       defaultControllerSettings,
       { x: 2, y: 0, z: -1 },
     );
 
-    expect(draft.to).toEqual('+2+1/+0+1/+-1+1/000000000000000000000000000=');
+    expect(draft.to).toMatch(/^\+2\+1\/\+0\+1\/\+0\+1\/0+=$/);
     expect(draft.memo).toEqual('geometry: box; color: 0x33aaff');
   });
 
@@ -23,6 +23,15 @@ describe('controller draft generation', () => {
     );
 
     expect(draft.to).toEqual('Avatar/+0+1/+0+1/+0+1/000000000000000000000=');
+  });
+
+  it('clamps controller coordinates at the origin', () => {
+    const draft = createControllerDraft(
+      defaultControllerSettings,
+      { x: -2, y: -3, z: -1 },
+    );
+
+    expect(draft.to).toMatch(/^\+0\+1\/\+0\+1\/\+0\+1\/0+=$/);
   });
 
   it('returns validation errors instead of throwing for invalid drafts', () => {

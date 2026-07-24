@@ -17,7 +17,12 @@ import { ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useStat
 import { AppContext } from '../../utils/appContext';
 import { useAgent } from '../../useCases/useAgent';
 import { usePersistentState } from '../../useCases/usePersistentState';
-import { defaultControllerSettings, ControllerPosition, tryCreateControllerDraft } from './controllerUtils';
+import {
+  defaultControllerSettings,
+  ControllerPosition,
+  normalizeControllerPosition,
+  tryCreateControllerDraft,
+} from './controllerUtils';
 
 const useEmission = () => {
   const { pushTransaction } = useContext(AppContext);
@@ -142,7 +147,8 @@ const WasdController = ({ settings }: { settings: typeof defaultControllerSettin
         if (keys.current.has('s')) next.z += speed;
         if (keys.current.has('q')) next.y -= speed;
         if (keys.current.has('e')) next.y += speed;
-        const nextDraftResult = tryCreateControllerDraft(settings, next);
+        const nextPosition = normalizeControllerPosition(next);
+        const nextDraftResult = tryCreateControllerDraft(settings, nextPosition);
         if (nextDraftResult.draft) {
           emitter.emit(
             nextDraftResult.draft.to,
@@ -150,7 +156,7 @@ const WasdController = ({ settings }: { settings: typeof defaultControllerSettin
             nextDraftResult.draft.amountCruzbits,
           );
         }
-        return next;
+        return nextPosition;
       });
     }, 250);
     return () => window.clearInterval(interval);
@@ -160,7 +166,7 @@ const WasdController = ({ settings }: { settings: typeof defaultControllerSettin
     <IonCard>
       <IonCardHeader><IonCardSubtitle>WASD controller</IonCardSubtitle></IonCardHeader>
       <IonCardContent>
-        <IonItem><IonInput label="Speed" labelPlacement="stacked" type="number" value={speed} min={1} onIonInput={(e) => setSpeed(Number(e.detail.value) || 1)} /></IonItem>
+        <IonItem><IonInput label="Speed" labelPlacement="stacked" type="number" value={speed} min={1} onIonInput={(e) => setSpeed(Math.max(1, Number(e.detail.value) || 1))} /></IonItem>
         <IonItem><IonInput label="Emission passphrase" labelPlacement="stacked" type="password" value={emitter.passphrase} onIonInput={(e) => emitter.updatePassphrase(e.detail.value?.toString() ?? '')} /></IonItem>
         <IonButton expand="block" color={emitter.isActive ? 'danger' : 'primary'} disabled={!emitter.isActive && !emitter.passphrase} onClick={() => {
           if (emitter.isActive) {
@@ -188,9 +194,9 @@ const DrawingController = ({ settings }: { settings: typeof defaultControllerSet
     if (!emitter.isActive || event.buttons !== 1) return;
     const rect = event.currentTarget.getBoundingClientRect();
     const point = {
-      x: Math.round((event.clientX - rect.left) / 20),
+      x: Math.max(0, Math.round((event.clientX - rect.left) / 20)),
       y: 0,
-      z: Math.round((event.clientY - rect.top) / 20),
+      z: Math.max(0, Math.round((event.clientY - rect.top) / 20)),
     };
     if (lastPoint && Math.hypot(point.x - lastPoint.x, point.z - lastPoint.z) < 1) return;
     setLastPoint(point);
@@ -217,7 +223,7 @@ const DrawingController = ({ settings }: { settings: typeof defaultControllerSet
           emitter.start();
           blurFocusedElement();
         }}>{emitter.isActive ? 'Stop drawing emission' : 'Start drawing emission'}</IonButton>
-        <div onPointerMove={draw} onPointerDown={draw} style={{ height: 240, border: '1px solid var(--ion-color-medium)', borderRadius: 8, touchAction: 'none', background: 'repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(128,128,128,.18) 20px), repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(128,128,128,.18) 20px)' }} />
+        <div data-testid="drawing-surface" onPointerMove={draw} onPointerDown={draw} style={{ height: 240, border: '1px solid var(--ion-color-medium)', borderRadius: 8, touchAction: 'none', background: 'repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(128,128,128,.18) 20px), repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(128,128,128,.18) 20px)' }} />
         {draftResult.error && <IonText color="danger"><p>{draftResult.error}</p></IonText>}
         <IonTextarea readonly value={draftResult.draft?.to ?? ''} aria-label="Drawing spatial destination preview" />
         <IonTextarea readonly value={draftResult.draft?.memo ?? ''} aria-label="Drawing spatial memo preview" />

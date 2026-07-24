@@ -12,6 +12,15 @@ export interface ControllerPosition {
   z: number;
 }
 
+const normalizeCoordinate = (coordinate: number) =>
+  Number.isFinite(coordinate) ? Math.max(0, coordinate) : 0;
+
+export const normalizeControllerPosition = (position: ControllerPosition): ControllerPosition => ({
+  x: normalizeCoordinate(position.x),
+  y: normalizeCoordinate(position.y),
+  z: normalizeCoordinate(position.z),
+});
+
 export interface ControllerSettings {
   namespace: string;
   geometry: string;
@@ -32,12 +41,13 @@ export const createMovementDeclaration = (
   settings: ControllerSettings,
   position: ControllerPosition,
 ): SpatialDeclaration => {
+  const normalizedPosition = normalizeControllerPosition(position);
   const bounds: SpatialBounds = {
-    x: position.x,
+    x: normalizedPosition.x,
     width: settings.dimensions.width,
-    y: position.y,
+    y: normalizedPosition.y,
     height: settings.dimensions.height,
-    z: position.z,
+    z: normalizedPosition.z,
     depth: settings.dimensions.depth,
   };
 
