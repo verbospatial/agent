@@ -25,14 +25,17 @@ import {
   normalizeControllerSpeed,
   tryCreateControllerDraft,
 } from './controllerUtils';
+import { SpatialEmissionScheduler } from './emissionScheduler';
 
-const useEmission = () => {
+const useEmission = (emissionsPerSecond: number) => {
   const { pushTransaction } = useContext(AppContext);
   const { selectedKeyIndex, label } = useAgent();
   const [passphrase, setPassphrase] = useState('');
   const [isActive, setIsActive] = useState(false);
   const pendingResultCleanups = useRef(new Set<() => void>());
   const [presentToast] = useIonToast();
+  const emitRef = useRef<(to: string, memo: string, amountCruzbits: number) => Promise<void>>();
+  const schedulerRef = useRef<SpatialEmissionScheduler<{ to: string; memo: string; amountCruzbits: number }>>();
 
   const cleanupPendingResults = useCallback(() => {
     pendingResultCleanups.current.forEach((cleanup) => cleanup());
@@ -42,32 +45,54 @@ const useEmission = () => {
   const emit = async (to: string, memo: string, amountCruzbits: number) => {
     if (!isActive || !passphrase) return;
 
-    let resultCleanup: (() => void) | undefined;
-    resultCleanup = await pushTransaction(
-      to,
-      memo,
-      amountCruzbits,
-      passphrase,
-      label,
-      selectedKeyIndex,
-      (data) => {
-        if (data.error) {
-          presentToast({ message: data.error, duration: 3000, position: 'bottom' });
-        }
+    await new Promise<void>((resolve, reject) => {
+      let resultCleanup: (() => void) | undefined;
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        resultCleanup?.();
+        pendingResultCleanups.current.delete(finish);
+        resolve();
+      };
+      void pushTransaction(
+        to,
+        memo,
+        amountCruzbits,
+        passphrase,
+        label,
+        selectedKeyIndex,
+        (data) => {
+          if (data.error) {
+            presentToast({ message: data.error, duration: 3000, position: 'bottom' });
+          }
+          finish();
+        },
+      ).then((cleanup) => {
+        resultCleanup = cleanup;
+        if (settled) resultCleanup?.();
+        else if (resultCleanup) pendingResultCleanups.current.add(finish);
+        else finish();
+      }).catch(reject);
+    });
+  };
 
-        if (resultCleanup) {
-          resultCleanup();
-          pendingResultCleanups.current.delete(resultCleanup);
-        }
-      },
-    );
+  emitRef.current = emit;
+  if (!schedulerRef.current) {
+    schedulerRef.current = new SpatialEmissionScheduler({
+      emit: (draft) => emitRef.current!(draft.to, draft.memo, draft.amountCruzbits),
+      minimumIntervalMs: 1000 / Math.max(1, emissionsPerSecond),
+      onError: () => presentToast({ message: 'Spatial emission failed', duration: 3000, position: 'bottom' }),
+    });
+  }
+  schedulerRef.current.setMinimumInterval(1000 / Math.max(1, emissionsPerSecond));
 
-    if (resultCleanup) {
-      pendingResultCleanups.current.add(resultCleanup);
-    }
+  const submit = (to: string, memo: string, amountCruzbits: number) => {
+    schedulerRef.current?.submit({ to, memo, amountCruzbits });
   };
 
   const stop = useCallback(() => {
+    schedulerRef.current?.stop();
     setIsActive(false);
     setPassphrase('');
     cleanupPendingResults();
@@ -75,10 +100,12 @@ const useEmission = () => {
 
   const start = useCallback(() => {
     if (!passphrase) return;
+    schedulerRef.current?.start();
     setIsActive(true);
   }, [passphrase]);
 
   const updatePassphrase = useCallback((value: string) => {
+    schedulerRef.current?.stop();
     setPassphrase(value);
     setIsActive(false);
     cleanupPendingResults();
@@ -92,7 +119,7 @@ const useEmission = () => {
     };
   }, [stop]);
 
-  return { isActive, passphrase, updatePassphrase, start, stop, emit };
+  return { isActive, passphrase, updatePassphrase, start, stop, submit };
 };
 
 const focusedEditable = () => {
@@ -106,8 +133,8 @@ const blurFocusedElement = () => {
   }
 };
 
-const WasdController = ({ settings }: { settings: typeof defaultControllerSettings }) => {
-  const emitter = useEmission();
+const WasdController = ({ settings, emissionsPerSecond }: { settings: typeof defaultControllerSettings; emissionsPerSecond: number }) => {
+  const emitter = useEmission(emissionsPerSecond);
   const keys = useRef(new Set<string>());
   const [position, setPosition] = useState<ControllerPosition>({ x: 0, y: 0, z: 0 });
   const [speed, setSpeed] = useState(1);
@@ -152,7 +179,7 @@ const WasdController = ({ settings }: { settings: typeof defaultControllerSettin
         const nextPosition = normalizeControllerPosition(next);
         const nextDraftResult = tryCreateControllerDraft(settings, nextPosition);
         if (nextDraftResult.draft) {
-          emitter.emit(
+          emitter.submit(
             nextDraftResult.draft.to,
             nextDraftResult.draft.memo,
             nextDraftResult.draft.amountCruzbits,
@@ -187,8 +214,8 @@ const WasdController = ({ settings }: { settings: typeof defaultControllerSettin
   );
 };
 
-const DrawingController = ({ settings }: { settings: typeof defaultControllerSettings }) => {
-  const emitter = useEmission();
+const DrawingController = ({ settings, emissionsPerSecond }: { settings: typeof defaultControllerSettings; emissionsPerSecond: number }) => {
+  const emitter = useEmission(emissionsPerSecond);
   const [lastPoint, setLastPoint] = useState<ControllerPosition | null>(null);
   const draftResult = useMemo(() => tryCreateControllerDraft(settings, lastPoint ?? { x: 0, y: 0, z: 0 }), [settings, lastPoint]);
 
@@ -204,7 +231,7 @@ const DrawingController = ({ settings }: { settings: typeof defaultControllerSet
     setLastPoint(point);
     const nextDraftResult = tryCreateControllerDraft(settings, point);
     if (nextDraftResult.draft) {
-      emitter.emit(
+      emitter.submit(
         nextDraftResult.draft.to,
         nextDraftResult.draft.memo,
         nextDraftResult.draft.amountCruzbits,
@@ -242,6 +269,7 @@ export const MovementControllerPanel = ({ plainTextTransaction }: { plainTextTra
   const [geometry, setGeometry] = usePersistentState('controller-geometry', 'box');
   const [color, setColor] = usePersistentState('controller-color', '0x33aaff');
   const [amountCruzbits, setAmountCruzbits] = usePersistentState('controller-amount-cruzbits', defaultControllerSettings.amountCruzbits);
+  const [emissionsPerSecond, setEmissionsPerSecond] = usePersistentState('controller-emissions-per-second', 1);
 
   const settings = useMemo(() => ({ ...defaultControllerSettings, namespace, geometry, color, amountCruzbits }), [namespace, geometry, color, amountCruzbits]);
 
@@ -259,13 +287,14 @@ export const MovementControllerPanel = ({ plainTextTransaction }: { plainTextTra
             <IonItem><IonInput label="Object namespace" labelPlacement="stacked" value={namespace} onIonInput={(e) => setNamespace(e.detail.value?.toString() ?? '')} /></IonItem>
             <IonItem><IonInput label="Geometry" labelPlacement="stacked" value={geometry} onIonInput={(e) => setGeometry(e.detail.value?.toString() ?? 'box')} /></IonItem>
             <IonItem><IonInput label="Color/material" labelPlacement="stacked" value={color} onIonInput={(e) => setColor(e.detail.value?.toString() ?? '0x33aaff')} /></IonItem>
+            <IonItem><IonInput label="Maximum emissions per second" labelPlacement="stacked" type="number" value={emissionsPerSecond} min={1} max={60} onIonInput={(e) => setEmissionsPerSecond(Math.min(60, Math.max(1, Number(e.detail.value) || 1)))} /></IonItem>
             <IonItem><IonInput label="Amount (cruzbits)" labelPlacement="stacked" type="number" value={amountCruzbits} onIonInput={(e) => setAmountCruzbits(Number(e.detail.value) || defaultControllerSettings.amountCruzbits)} /></IonItem>
           </>}
         </IonCardContent>
       </IonCard>
       {mode === 'plain-text' && plainTextTransaction}
-      {mode === 'wasd' && <WasdController settings={settings} />}
-      {mode === 'drawing' && <DrawingController settings={settings} />}
+      {mode === 'wasd' && <WasdController settings={settings} emissionsPerSecond={emissionsPerSecond} />}
+      {mode === 'drawing' && <DrawingController settings={settings} emissionsPerSecond={emissionsPerSecond} />}
     </section>
   );
 };
