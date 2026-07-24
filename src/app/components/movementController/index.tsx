@@ -23,6 +23,7 @@ const useEmission = () => {
   const { pushTransaction } = useContext(AppContext);
   const { selectedKeyIndex, label } = useAgent();
   const [passphrase, setPassphrase] = useState('');
+  const [isActive, setIsActive] = useState(false);
   const pendingResultCleanups = useRef(new Set<() => void>());
   const [presentToast] = useIonToast();
 
@@ -32,7 +33,7 @@ const useEmission = () => {
   }, []);
 
   const emit = async (to: string, memo: string, amountCruzbits: number) => {
-    if (!passphrase) return;
+    if (!isActive || !passphrase) return;
 
     let resultCleanup: (() => void) | undefined;
     resultCleanup = await pushTransaction(
@@ -60,7 +61,19 @@ const useEmission = () => {
   };
 
   const stop = useCallback(() => {
+    setIsActive(false);
     setPassphrase('');
+    cleanupPendingResults();
+  }, [cleanupPendingResults]);
+
+  const start = useCallback(() => {
+    if (!passphrase) return;
+    setIsActive(true);
+  }, [passphrase]);
+
+  const updatePassphrase = useCallback((value: string) => {
+    setPassphrase(value);
+    setIsActive(false);
     cleanupPendingResults();
   }, [cleanupPendingResults]);
 
@@ -72,12 +85,18 @@ const useEmission = () => {
     };
   }, [stop]);
 
-  return { isActive: !!passphrase, passphrase, setPassphrase, stop, emit };
+  return { isActive, passphrase, updatePassphrase, start, stop, emit };
 };
 
 const focusedEditable = () => {
   const tagName = document.activeElement?.tagName.toLowerCase();
   return tagName === 'input' || tagName === 'textarea' || tagName === 'ion-input' || tagName === 'ion-textarea';
+};
+
+const blurFocusedElement = () => {
+  if (document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur();
+  }
 };
 
 const WasdController = ({ settings }: { settings: typeof defaultControllerSettings }) => {
@@ -89,6 +108,7 @@ const WasdController = ({ settings }: { settings: typeof defaultControllerSettin
 
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
+      if (!emitter.isActive) return;
       if (focusedEditable()) return;
       if ('wasdqe'.includes(event.key.toLowerCase())) {
         keys.current.add(event.key.toLowerCase());
@@ -102,7 +122,13 @@ const WasdController = ({ settings }: { settings: typeof defaultControllerSettin
       window.removeEventListener('keydown', down);
       window.removeEventListener('keyup', up);
     };
-  }, []);
+  }, [emitter.isActive]);
+
+  useEffect(() => {
+    if (!emitter.isActive) {
+      keys.current.clear();
+    }
+  }, [emitter.isActive]);
 
   useEffect(() => {
     if (!emitter.isActive) return;
@@ -135,8 +161,15 @@ const WasdController = ({ settings }: { settings: typeof defaultControllerSettin
       <IonCardHeader><IonCardSubtitle>WASD controller</IonCardSubtitle></IonCardHeader>
       <IonCardContent>
         <IonItem><IonInput label="Speed" labelPlacement="stacked" type="number" value={speed} min={1} onIonInput={(e) => setSpeed(Number(e.detail.value) || 1)} /></IonItem>
-        <IonItem><IonInput label="Emission passphrase" labelPlacement="stacked" type="password" value={emitter.passphrase} onIonInput={(e) => emitter.setPassphrase(e.detail.value?.toString() ?? '')} /></IonItem>
-        <IonButton expand="block" color={emitter.isActive ? 'danger' : 'primary'} onClick={() => emitter.isActive ? emitter.stop() : undefined}>{emitter.isActive ? 'Stop realtime emission' : 'Enter passphrase to start'}</IonButton>
+        <IonItem><IonInput label="Emission passphrase" labelPlacement="stacked" type="password" value={emitter.passphrase} onIonInput={(e) => emitter.updatePassphrase(e.detail.value?.toString() ?? '')} /></IonItem>
+        <IonButton expand="block" color={emitter.isActive ? 'danger' : 'primary'} disabled={!emitter.isActive && !emitter.passphrase} onClick={() => {
+          if (emitter.isActive) {
+            emitter.stop();
+            return;
+          }
+          emitter.start();
+          blurFocusedElement();
+        }}>{emitter.isActive ? 'Stop realtime emission' : 'Start realtime emission'}</IonButton>
         <IonText color="medium"><p>Use W/A/S/D to move on X/Z and Q/E for height. Position: {position.x}, {position.y}, {position.z}</p></IonText>
         {draftResult.error && <IonText color="danger"><p>{draftResult.error}</p></IonText>}
         <IonTextarea readonly value={draftResult.draft?.to ?? ''} aria-label="WASD spatial destination preview" />
@@ -175,8 +208,15 @@ const DrawingController = ({ settings }: { settings: typeof defaultControllerSet
     <IonCard>
       <IonCardHeader><IonCardSubtitle>2D drawing controller</IonCardSubtitle></IonCardHeader>
       <IonCardContent>
-        <IonItem><IonInput label="Emission passphrase" labelPlacement="stacked" type="password" value={emitter.passphrase} onIonInput={(e) => emitter.setPassphrase(e.detail.value?.toString() ?? '')} /></IonItem>
-        <IonButton expand="block" color={emitter.isActive ? 'danger' : 'primary'} onClick={() => emitter.isActive ? emitter.stop() : undefined}>{emitter.isActive ? 'Stop drawing emission' : 'Enter passphrase to start'}</IonButton>
+        <IonItem><IonInput label="Emission passphrase" labelPlacement="stacked" type="password" value={emitter.passphrase} onIonInput={(e) => emitter.updatePassphrase(e.detail.value?.toString() ?? '')} /></IonItem>
+        <IonButton expand="block" color={emitter.isActive ? 'danger' : 'primary'} disabled={!emitter.isActive && !emitter.passphrase} onClick={() => {
+          if (emitter.isActive) {
+            emitter.stop();
+            return;
+          }
+          emitter.start();
+          blurFocusedElement();
+        }}>{emitter.isActive ? 'Stop drawing emission' : 'Start drawing emission'}</IonButton>
         <div onPointerMove={draw} onPointerDown={draw} style={{ height: 240, border: '1px solid var(--ion-color-medium)', borderRadius: 8, touchAction: 'none', background: 'repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(128,128,128,.18) 20px), repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(128,128,128,.18) 20px)' }} />
         {draftResult.error && <IonText color="danger"><p>{draftResult.error}</p></IonText>}
         <IonTextarea readonly value={draftResult.draft?.to ?? ''} aria-label="Drawing spatial destination preview" />
