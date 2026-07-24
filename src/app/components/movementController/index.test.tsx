@@ -73,9 +73,46 @@ describe('MovementControllerPanel WASD mode', () => {
     });
 
     expect(pushTransaction).toHaveBeenCalledTimes(1);
-    expect(screen.getByText(/Position: 0, 0, -1/)).toBeInTheDocument();
+    expect(screen.getByText(/Position: 0, 0, 0/)).toBeInTheDocument();
 
     fireEvent.change(passphrase, { target: { value: 'updated passphrase' } });
     expect(cleanupResultListener).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('MovementControllerPanel drawing mode', () => {
+  it('clamps drawing points before the surface origin', async () => {
+    const pushTransaction = vi.fn().mockResolvedValue(vi.fn());
+
+    render(
+      <AppContext.Provider value={{ pushTransaction } as never}>
+        <MovementControllerPanel plainTextTransaction={<div>Plain text transaction</div>} />
+      </AppContext.Provider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Drawing' }));
+    fireEvent.change(screen.getByLabelText('Emission passphrase'), { target: { value: 'correct horse battery staple' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Start drawing emission' }));
+
+    const surface = screen.getByTestId('drawing-surface');
+    vi.spyOn(surface, 'getBoundingClientRect').mockReturnValue({ left: 20, top: 40 } as DOMRect);
+    fireEvent(surface, new MouseEvent('pointerdown', {
+      bubbles: true,
+      buttons: 1,
+      clientX: 0,
+      clientY: 0,
+    }));
+
+    await act(async () => {});
+
+    expect(pushTransaction).toHaveBeenCalledWith(
+      expect.stringMatching(/^\+0\+1\/\+0\+1\/\+0\+1\/0+=$/),
+      'geometry: box; color: 0x33aaff',
+      1000000,
+      'correct horse battery staple',
+      'test-agent',
+      [0, 0],
+      expect.any(Function),
+    );
   });
 });
