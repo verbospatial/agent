@@ -20,7 +20,9 @@ import { usePersistentState } from '../../useCases/usePersistentState';
 import {
   defaultControllerSettings,
   ControllerPosition,
+  MAX_CONTROLLER_SPEED,
   normalizeControllerPosition,
+  normalizeControllerSpeed,
   tryCreateControllerDraft,
 } from './controllerUtils';
 
@@ -166,7 +168,7 @@ const WasdController = ({ settings }: { settings: typeof defaultControllerSettin
     <IonCard>
       <IonCardHeader><IonCardSubtitle>WASD controller</IonCardSubtitle></IonCardHeader>
       <IonCardContent>
-        <IonItem><IonInput label="Speed" labelPlacement="stacked" type="number" value={speed} min={1} onIonInput={(e) => setSpeed(Math.max(1, Number(e.detail.value) || 1))} /></IonItem>
+        <IonItem><IonInput label="Speed" labelPlacement="stacked" type="number" value={speed} min={1} max={MAX_CONTROLLER_SPEED} onIonInput={(e) => setSpeed(normalizeControllerSpeed(e.detail.value))} /></IonItem>
         <IonItem><IonInput label="Emission passphrase" labelPlacement="stacked" type="password" value={emitter.passphrase} onIonInput={(e) => emitter.updatePassphrase(e.detail.value?.toString() ?? '')} /></IonItem>
         <IonButton expand="block" color={emitter.isActive ? 'danger' : 'primary'} disabled={!emitter.isActive && !emitter.passphrase} onClick={() => {
           if (emitter.isActive) {

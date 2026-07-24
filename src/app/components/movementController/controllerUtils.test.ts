@@ -2,10 +2,18 @@ import { describe, expect, it } from 'vitest';
 import {
   createControllerDraft,
   defaultControllerSettings,
+  MAX_CONTROLLER_SPEED,
+  normalizeControllerSpeed,
   tryCreateControllerDraft,
 } from './controllerUtils';
 
 describe('controller draft generation', () => {
+  it('rejects non-finite speeds and caps finite speeds at a safe maximum', () => {
+    expect(normalizeControllerSpeed(Infinity)).toEqual(1);
+    expect(normalizeControllerSpeed('not-a-number')).toEqual(1);
+    expect(normalizeControllerSpeed(1e308)).toEqual(MAX_CONTROLLER_SPEED);
+  });
+
   it('clamps negative coordinates when object namespace is empty', () => {
     const draft = createControllerDraft(
       defaultControllerSettings,
