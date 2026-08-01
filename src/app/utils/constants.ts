@@ -3,7 +3,7 @@ export const GENESIS_BLOCK_ID =
   '00000000e29a7850088d660489b7b9ae2da763bc3bd83324ecc54eee04840adb';
 export const PRIMARY_CRUZBIT_NODE = `sure-formerly-filly.ngrok-free.app/${GENESIS_BLOCK_ID}`;
 export const SECONDARY_CRUZBIT_NODE =
-  'ungallant-unimpeding-kade.ngrok-free.dev/000000b179a6172473845cbc913598edef179aabb31108324694ca1b12a19e32';
+  'ungallant-unimpeding-kade.ngrok-free.dev/000006913ccf73b5990eb4833e4cdbd5ef58061384481ff1f6cee3cb7f18b2cd';
 export const DEFAULT_CRUZBIT_NODE = PRIMARY_CRUZBIT_NODE;
 export const CRUZBIT_NODES = [
   { label: 'Primary', value: PRIMARY_CRUZBIT_NODE },
