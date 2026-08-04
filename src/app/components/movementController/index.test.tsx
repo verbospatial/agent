@@ -90,7 +90,7 @@ describe('MovementControllerPanel drawing mode', () => {
       </AppContext.Provider>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Drawing' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Draw' }));
     fireEvent.change(screen.getByLabelText('Emission passphrase'), { target: { value: 'correct horse battery staple' } });
     fireEvent.click(screen.getByRole('button', { name: 'Start drawing emission' }));
 

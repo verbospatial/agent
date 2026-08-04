@@ -236,9 +236,6 @@ const Send = () => {
                 </IonText>
               </section>
               <section className="ion-padding-start ion-padding-end ion-padding-bottom">
-                <IonText color="medium">
-                  <p style={{ marginBottom: '0.5rem' }}>Node endpoint</p>
-                </IonText>
                 <IonSegment
                   value={selectedNode}
                   onIonChange={(event) => {
