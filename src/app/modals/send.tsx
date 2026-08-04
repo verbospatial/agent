@@ -232,7 +232,7 @@ const Send = () => {
                   color="medium"
                   style={{ textAlign: 'center', width: '100%', display: 'block' }}
                 >
-                  Balance: {(selectedKeyBalance / 100000000).toFixed(8)} CRUZ
+                  Balance: {(selectedKeyBalance / 100000000).toFixed(8)}
                 </IonText>
               </section>
               <section className="ion-padding-start ion-padding-end ion-padding-bottom">
