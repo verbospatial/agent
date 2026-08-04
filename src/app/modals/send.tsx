@@ -254,17 +254,6 @@ const Send = () => {
                     </IonSegmentButton>
                   ))}
                 </IonSegment>
-                <IonText color="medium">
-                  <p
-                    style={{
-                      marginTop: '0.5rem',
-                      overflowWrap: 'anywhere',
-                      fontSize: '0.75rem',
-                    }}
-                  >
-                    wss://{selectedNode}
-                  </p>
-                </IonText>
               </section>
               <MovementControllerPanel
                 plainTextTransaction={
