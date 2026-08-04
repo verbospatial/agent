@@ -279,9 +279,9 @@ export const MovementControllerPanel = ({ plainTextTransaction }: { plainTextTra
         <IonCardHeader><IonCardSubtitle>Transaction mode</IonCardSubtitle></IonCardHeader>
         <IonCardContent>
           <IonSegment value={mode} onIonChange={(event) => setMode((event.detail.value as 'plain-text' | 'wasd' | 'drawing') ?? 'plain-text')}>
-            <IonSegmentButton value="plain-text"><IonLabel>Plain text</IonLabel></IonSegmentButton>
+            <IonSegmentButton value="plain-text"><IonLabel>Text</IonLabel></IonSegmentButton>
             <IonSegmentButton value="wasd"><IonLabel>WASD</IonLabel></IonSegmentButton>
-            <IonSegmentButton value="drawing"><IonLabel>Drawing</IonLabel></IonSegmentButton>
+            <IonSegmentButton value="drawing"><IonLabel>Draw</IonLabel></IonSegmentButton>
           </IonSegment>
           {mode !== 'plain-text' && <>
             <IonItem><IonInput label="Object namespace" labelPlacement="stacked" value={namespace} onIonInput={(e) => setNamespace(e.detail.value?.toString() ?? '')} /></IonItem>
